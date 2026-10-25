@@ -137,7 +137,7 @@ export function Footer() {
             </motion.button>
           </div>
           <motion.p
-            className="text-white/40 font-mono text-sm mt-2 text-center"
+            className="text-white/70 font-mono text-sm mt-2 text-center"
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
@@ -162,7 +162,7 @@ export function Footer() {
                     <motion.div whileHover={{ x: 4 }} transition={{ type: "spring", stiffness: 400, damping: 17 }}>
                       <Link
                         href="#"
-                        className="text-white/60 hover:text-brand-lime font-mono text-sm transition-colors inline-block"
+                        className="text-white/75 hover:text-brand-lime font-mono text-sm transition-colors inline-block"
                       >
                         {item}
                       </Link>
@@ -187,7 +187,7 @@ export function Footer() {
             transition={{ type: "spring", stiffness: 400, damping: 17 }}
           >
             <Image
-              src="/images/mylogo.png"
+              src="/images/mylogo.webp"
               alt="LKP SlangTech Logo"
               width={32}
               height={32}
@@ -199,10 +199,10 @@ export function Footer() {
             </span>
           </motion.div>
 
-          <p className="text-white/40 font-mono text-sm">(c) 2026 LKP SlangTech. All rights reserved.</p>
+          <p className="text-white/70 font-mono text-sm">(c) 2026 LKP SlangTech. All rights reserved.</p>
 
           <motion.p
-            className="text-white/30 font-mono text-sm cursor-pointer"
+            className="text-white/60 font-mono text-sm cursor-pointer"
             onHoverStart={() => setIsHovering(true)}
             onHoverEnd={() => setIsHovering(false)}
             animate={

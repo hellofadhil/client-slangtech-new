@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import type { Class } from "@/features/classes/services/classes"
 import {
@@ -12,12 +13,20 @@ import {
 import {
   BookOpenCheck,
   CalendarDays,
+  ChevronLeft,
   ChevronRight,
   Clock,
   Sparkles,
   User,
   Users,
 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  type CarouselApi,
+} from "@/components/ui/carousel"
 
 type AvailableClassesSectionProps = {
   classes: Class[]
@@ -155,9 +164,135 @@ function ClassDescriptionModal({ classItem }: { classItem: Class }) {
   )
 }
 
+function ClassCard({ classItem }: { classItem: Class }) {
+  const image = getClassImage(classItem)
+  const name = getLocalizedText(classItem.name)
+  const description = getLocalizedText(classItem.longDescription)
+  const summary = getSummary(description)
+  const price = classItem.discountPrice ?? classItem.price
+  const detailPath = getClassDetailPath(classItem)
+  const hasDiscount =
+    typeof classItem.discountPrice === "number" &&
+    classItem.discountPrice < classItem.price
+
+  return (
+    <article className="group flex h-full flex-col overflow-hidden rounded-[1.35rem] bg-white shadow-[0_16px_45px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_22px_65px_rgba(15,23,42,0.14)]">
+      <Link href={detailPath} className="relative block aspect-[2/1] w-full overflow-hidden bg-brand-mint md:aspect-[21/9]">
+        {image ? (
+          <img
+            src={image}
+            alt={classItem.images[0]?.alt || name}
+            className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-brand-mint text-primary">
+            <BookOpenCheck className="size-12" />
+          </div>
+        )}
+      </Link>
+
+      <div className="flex flex-1 flex-col p-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <Link
+              href={detailPath}
+              className="line-clamp-1 text-xl font-black leading-tight tracking-normal text-slate-950 transition hover:text-primary"
+            >
+              {name}
+            </Link>
+
+            <div className="mt-1.5">
+              {hasDiscount && (
+                <p className="mb-1 text-sm font-medium text-slate-500 line-through">
+                  {formatPrice(classItem.price)}
+                </p>
+              )}
+
+              <p className="text-2xl font-black text-primary">
+                {formatPrice(price)}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <p className="mt-3 line-clamp-2 text-sm leading-6 text-muted-foreground">
+          {summary}
+        </p>
+
+        <div className="mt-3">
+          <ClassDescriptionModal classItem={classItem} />
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2 pb-4">
+          {classItem.totalSessions ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-2xs">
+              <CalendarDays className="size-3.5 text-primary" />
+              {classItem.totalSessions} Sesi
+            </span>
+          ) : null}
+
+          {classItem.sessionDurationMinutes ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-2xs">
+              <Clock className="size-3.5 text-primary" />
+              {classItem.sessionDurationMinutes} Menit
+            </span>
+          ) : null}
+
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-2xs">
+            <Sparkles className="size-3.5 text-primary" />
+            {classItem.level || "Beginner"}
+          </span>
+
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-2xs">
+            {classItem.type === "private" ? (
+              <User className="size-3.5 text-primary" />
+            ) : (
+              <Users className="size-3.5 text-primary" />
+            )}
+            {classItem.type === "private" ? "Private" : "Grup"}
+          </span>
+        </div>
+
+        <Link
+          href={detailPath}
+          className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-black text-primary-foreground shadow-[0_10px_24px_rgba(11,135,65,0.22)] transition hover:-translate-y-0.5 hover:bg-brand-green-strong hover:shadow-[0_14px_32px_rgba(11,135,65,0.3)]"
+        >
+          <BookOpenCheck className="size-4" />
+          Detail Kelas
+        </Link>
+      </div>
+    </article>
+  )
+}
+
 export function AvailableClassesSection({ classes, variant = "home" }: AvailableClassesSectionProps) {
   const isPage = variant === "page"
   const Heading = isPage ? "h1" : "h2"
+  const [api, setApi] = useState<CarouselApi>()
+  const [current, setCurrent] = useState(0)
+  const [count, setCount] = useState(0)
+  const [canScrollPrev, setCanScrollPrev] = useState(false)
+  const [canScrollNext, setCanScrollNext] = useState(false)
+
+  useEffect(() => {
+    if (!api) return
+
+    const updateState = () => {
+      setCount(api.scrollSnapList().length)
+      setCurrent(api.selectedScrollSnap())
+      setCanScrollPrev(api.canScrollPrev())
+      setCanScrollNext(api.canScrollNext())
+    }
+
+    updateState()
+    api.on("select", updateState)
+    api.on("reInit", updateState)
+
+    return () => {
+      api.off("select", updateState)
+      api.off("reInit", updateState)
+    }
+  }, [api])
 
   return (
     <section
@@ -177,17 +312,11 @@ export function AvailableClassesSection({ classes, variant = "home" }: Available
 
       <div className={isPage ? "relative z-10 mx-auto max-w-7xl" : "relative z-10 mx-auto max-w-7xl px-6"}>
         <div className={isPage ? "mx-auto mb-10 max-w-3xl text-center" : "mb-10 max-w-3xl"}>
-          {!isPage && (
-            <span className="inline-flex rounded-full bg-white/10 px-4 py-2 font-mono text-sm tracking-widest text-brand-lime backdrop-blur">
-              KELAS TERSEDIA
-            </span>
-          )}
-
           <Heading
             className={
               isPage
                 ? "text-3xl font-black tracking-normal text-foreground md:text-5xl"
-                : "mt-5 text-3xl font-black tracking-normal text-white md:text-5xl"
+                : "text-3xl font-black tracking-normal text-white md:text-5xl"
             }
           >
             Kelas yang Tersedia
@@ -205,111 +334,81 @@ export function AvailableClassesSection({ classes, variant = "home" }: Available
         </div>
 
         {classes.length > 0 ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {classes.map((classItem) => {
-              const image = getClassImage(classItem)
-              const name = getLocalizedText(classItem.name)
-              const description = getLocalizedText(classItem.longDescription)
-              const summary = getSummary(description)
-              const price = classItem.discountPrice ?? classItem.price
-              const detailPath = getClassDetailPath(classItem)
-              const hasDiscount =
-                typeof classItem.discountPrice === "number" &&
-                classItem.discountPrice < classItem.price
-
-              return (
-                <article
-                  key={classItem.id}
-                  className="group flex h-full flex-col overflow-hidden rounded-[1.35rem] bg-white shadow-[0_16px_45px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_22px_65px_rgba(15,23,42,0.14)]"
-                >
-                  <Link href={detailPath} className="relative block aspect-[2/1] w-full overflow-hidden bg-brand-mint md:aspect-[21/9]">
-                    {image ? (
-                      <img
-                        src={image}
-                        alt={classItem.images[0]?.alt || name}
-                        className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-brand-mint text-primary">
-                        <BookOpenCheck className="size-12" />
-                      </div>
-                    )}
-                  </Link>
-
-                  <div className="flex flex-1 flex-col p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="min-w-0">
-                        <Link
-                          href={detailPath}
-                          className="line-clamp-1 text-xl font-black leading-tight tracking-normal text-slate-950 transition hover:text-primary"
-                        >
-                          {name}
-                        </Link>
-
-                        <div className="mt-1.5">
-                          {hasDiscount && (
-                            <p className="mb-1 text-sm font-medium text-slate-400 line-through">
-                              {formatPrice(classItem.price)}
-                            </p>
-                          )}
-
-                          <p className="text-2xl font-black text-primary">
-                            {formatPrice(price)}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <p className="mt-3 line-clamp-2 text-sm leading-6 text-slate-500">
-                      {summary}
-                    </p>
-
-                    <div className="mt-3">
-                      <ClassDescriptionModal classItem={classItem} />
-                    </div>
-
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {classItem.totalSessions ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-2xs">
-                          <CalendarDays className="size-3.5 text-primary" />
-                          {classItem.totalSessions} Sesi
-                        </span>
-                      ) : null}
-
-                      {classItem.sessionDurationMinutes ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-2xs">
-                          <Clock className="size-3.5 text-primary" />
-                          {classItem.sessionDurationMinutes} Menit
-                        </span>
-                      ) : null}
-
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-2xs">
-                        <Sparkles className="size-3.5 text-primary" />
-                        {classItem.level || "Beginner"}
-                      </span>
-
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-2xs">
-                        {classItem.type === "private" ? (
-                          <User className="size-3.5 text-primary" />
-                        ) : (
-                          <Users className="size-3.5 text-primary" />
-                        )}
-                        {classItem.type === "private" ? "Private" : "Grup"}
-                      </span>
-                    </div>
-
-                    <Link
-                      href={detailPath}
-                      className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-black text-primary-foreground shadow-[0_10px_24px_rgba(11,135,65,0.22)] transition hover:-translate-y-0.5 hover:bg-brand-green-strong hover:shadow-[0_14px_32px_rgba(11,135,65,0.3)]"
+          isPage ? (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {classes.map((classItem) => (
+                <ClassCard key={classItem.id} classItem={classItem} />
+              ))}
+            </div>
+          ) : (
+            <div className="relative">
+              <Carousel
+                setApi={setApi}
+                opts={{
+                  align: "start",
+                  loop: classes.length > 1,
+                }}
+                className="w-full"
+              >
+                <CarouselContent className="-ml-4 pb-2">
+                  {classes.map((classItem) => (
+                    <CarouselItem
+                      key={classItem.id}
+                      className="pl-4 basis-[88%] sm:basis-[70%] md:basis-1/2 lg:basis-1/3 flex"
                     >
-                      <BookOpenCheck className="size-4" />
-                      Detail Kelas
-                    </Link>
+                      <div className="w-full h-full">
+                        <ClassCard classItem={classItem} />
+                      </div>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+
+                {/* Navigation controls & indicators */}
+                <div className="mt-8 flex items-center justify-between sm:justify-center gap-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => api?.scrollPrev()}
+                    disabled={!canScrollPrev}
+                    className="size-10 rounded-full border-white/20 bg-white/10 text-white backdrop-blur hover:bg-white/25 disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer"
+                    aria-label="Kelas Sebelumnya"
+                  >
+                    <ChevronLeft className="size-5" />
+                  </Button>
+
+                  {/* Dot Indicators */}
+                  <div className="flex items-center gap-2">
+                    {Array.from({ length: count }).map((_, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => api?.scrollTo(index)}
+                        className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer ${
+                          current === index
+                            ? "w-8 bg-brand-lime"
+                            : "w-2.5 bg-white/30 hover:bg-white/50"
+                        }`}
+                        aria-label={`Ke slide ${index + 1}`}
+                      />
+                    ))}
                   </div>
-                </article>
-              )
-            })}
-          </div>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => api?.scrollNext()}
+                    disabled={!canScrollNext}
+                    className="size-10 rounded-full border-white/20 bg-white/10 text-white backdrop-blur hover:bg-white/25 disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer"
+                    aria-label="Kelas Berikutnya"
+                  >
+                    <ChevronRight className="size-5" />
+                  </Button>
+                </div>
+              </Carousel>
+            </div>
+          )
         ) : (
           <div className="rounded-[1.35rem] bg-white p-8 text-center shadow-[0_16px_45px_rgba(15,23,42,0.08)]">
             <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl bg-brand-mint text-primary">
@@ -322,6 +421,18 @@ export function AvailableClassesSection({ classes, variant = "home" }: Available
               Program kelas terbaru sedang kami siapkan untuk membantumu belajar bahasa dengan lebih percaya diri.
               Nantikan jadwal dan pilihan kelas berikutnya di halaman ini.
             </p>
+          </div>
+        )}
+
+        {!isPage && classes.length > 0 && (
+          <div className="mt-12 text-center">
+            <Link
+              href="/classes"
+              className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-8 py-3.5 text-sm font-black text-white backdrop-blur transition hover:bg-white/20 hover:scale-105 shadow-lg"
+            >
+              Lihat Semua Kelas
+              <ChevronRight className="size-4" />
+            </Link>
           </div>
         )}
       </div>

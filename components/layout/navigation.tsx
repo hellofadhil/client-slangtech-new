@@ -71,7 +71,7 @@ export function Navigation() {
     { label: "Our Class", href: "/classes" },
     { label: "Events", href: "/events" },
     { label: "Testimonials", href: "#testimonials" },
-    { label: "Community", href: "#creators" },
+    { label: "Contact", href: "#contact" },
   ]
 
   const handleLogout = () => {
@@ -95,7 +95,7 @@ export function Navigation() {
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5">
           <Image
-            src="/images/mylogo.png"
+            src="/images/mylogo.webp"
             alt="LKP SlangTech Logo"
             width={38}
             height={38}

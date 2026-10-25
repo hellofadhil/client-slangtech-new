@@ -21,7 +21,7 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 const siteUrl = getSiteUrl()
-const logoUrl = "/images/logo.webp"
+const logoUrl = "/images/mylogo.webp"
 const absoluteLogoUrl = `${siteUrl}${logoUrl}`
 
 const title = "LKP SlangTech | Tingkatkan Bahasamu Dengan Percaya Diri"

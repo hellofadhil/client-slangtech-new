@@ -10,9 +10,13 @@ import {
   BookOpen,
   CalendarCheck2,
   CalendarClock,
+  CalendarPlus,
   Camera,
+  Check,
   CheckCircle2,
   ChevronLeft,
+  Clock,
+  Copy,
   CreditCard,
   Edit3,
   FileUp,
@@ -28,6 +32,7 @@ import {
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Dialog,
   DialogContent,
@@ -49,6 +54,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { createAuthRedirectPath } from "@/features/auth/services/auth-redirect"
 import {
   getUserEnrollmentOverview,
+  manualPaymentAccount,
   requestEnrollmentReschedule,
   submitEventSessionAttendance,
   type ClassEnrollment,
@@ -442,18 +448,19 @@ function DashboardRefreshButton({
 function EmptyDashboard({ isTeacher }: { isTeacher?: boolean } = {}) {
   if (isTeacher) {
     return (
-      <section className="rounded-lg border border-border bg-white p-6 shadow-sm">
+      <section className="relative overflow-hidden rounded-xl border border-border bg-white p-6 shadow-sm">
+        <div className="absolute inset-x-0 top-0 h-1 bg-primary" />
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-4">
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-md bg-brand-mint text-primary">
+            <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-brand-mint text-primary shadow-xs">
               <CalendarClock className="size-6" />
             </div>
             <div>
               <h2 className="text-xl font-black tracking-normal text-foreground">
-                Selamat Datang di Akun Guru SlangTech
+                Selamat Datang di Portal Pengajar SlangTech
               </h2>
-              <p className="mt-2 max-w-2xl text-sm leading-7 text-muted-foreground">
-                Akun pengajar kamu telah aktif. Kamu dapat melihat atau memperbarui data profil melalui menu Profile.
+              <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                Akun guru kamu aktif. Kamu dapat memantau jadwal kelas dan memperbarui profil melalui menu di samping.
               </p>
             </div>
           </div>
@@ -463,27 +470,48 @@ function EmptyDashboard({ isTeacher }: { isTeacher?: boolean } = {}) {
   }
 
   return (
-    <section className="rounded-lg border border-border bg-white p-6 shadow-sm">
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-start gap-4">
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-md bg-brand-mint text-primary">
-            <CalendarClock className="size-6" />
-          </div>
-          <div>
-            <h2 className="text-xl font-black tracking-normal text-foreground">
-              Belum ada kelas aktif
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-7 text-muted-foreground">
-              Setelah pendaftaran dan pembayaran dikirim, progres kelas kamu akan muncul di sini.
-            </p>
+    <section className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-white via-brand-surface/40 to-brand-mint/20 p-6 shadow-sm transition sm:p-8">
+      {/* Decorative background circle */}
+      <div className="pointer-events-none absolute -right-10 -top-10 size-48 rounded-full bg-brand-mint/40 blur-2xl" />
+
+      <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+        <div className="max-w-xl space-y-3">
+          <h2 className="text-2xl font-black tracking-normal text-foreground sm:text-3xl">
+            Siap Tingkatkan Bahasamu?
+          </h2>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Kamu belum memiliki kelas atau event aktif. Pilih kelas bahasa Mandarin, Cantonese, English, atau Japanese bersama tutor berpengalaman sekarang.
+          </p>
+
+          <div className="grid grid-cols-2 gap-2.5 pt-1 text-xs font-bold text-foreground/80 sm:grid-cols-3">
+            <div className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-white/80 p-2">
+              <Check className="size-3.5 text-primary" />
+              <span>Jadwal Fleksibel</span>
+            </div>
+            <div className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-white/80 p-2">
+              <Check className="size-3.5 text-primary" />
+              <span>Tutor Native / Pro</span>
+            </div>
+            <div className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-white/80 p-2">
+              <Check className="size-3.5 text-primary" />
+              <span>Sertifikat Resmi</span>
+            </div>
           </div>
         </div>
-        <Button asChild className="shrink-0">
-          <Link href="/classes">
-            Pilih Kelas
-            <ArrowRight className="size-4" />
-          </Link>
-        </Button>
+
+        <div className="flex flex-col gap-2.5 sm:flex-row lg:flex-col shrink-0">
+          <Button asChild className="h-11 px-6 font-bold shadow-md shadow-primary/20">
+            <Link href="/classes">
+              Lihat Pilihan Kelas
+              <ArrowRight className="size-4" />
+            </Link>
+          </Button>
+          <Button asChild variant="outline" className="h-11 px-6 font-bold bg-white hover:bg-brand-mint">
+            <Link href="/events">
+              Jelajahi Event
+            </Link>
+          </Button>
+        </div>
       </div>
     </section>
   )
@@ -523,23 +551,155 @@ function EnrollmentSelector({
   )
 }
 
+function getGoogleCalendarUrl({
+  title,
+  description,
+  startsAt,
+  endsAt,
+  meetingUrl,
+}: {
+  title: string
+  description: string
+  startsAt: string
+  endsAt: string
+  meetingUrl?: string
+}) {
+  const formatGCalDate = (dateString: string) => {
+    const d = new Date(dateString)
+    return d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "")
+  }
+
+  const start = formatGCalDate(startsAt)
+  const end = endsAt ? formatGCalDate(endsAt) : start
+  const details = meetingUrl
+    ? `${description}\n\nLink Pertemuan: ${meetingUrl}`
+    : description
+
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: title,
+    dates: `${start}/${end}`,
+    details,
+    location: meetingUrl || "Online Class",
+  })
+
+  return `https://calendar.google.com/calendar/render?${params.toString()}`
+}
+
+function SessionCountdown({ startsAt, endsAt }: { startsAt: string; endsAt: string }) {
+  const [timeLeft, setTimeLeft] = useState<{
+    text: string
+    isLive: boolean
+    isPast: boolean
+  }>({ text: "", isLive: false, isPast: false })
+
+  useEffect(() => {
+    const calculateTime = () => {
+      const now = Date.now()
+      const start = new Date(startsAt).getTime()
+      const end = endsAt ? new Date(endsAt).getTime() : start + 60 * 60 * 1000
+
+      if (now >= start && now <= end) {
+        setTimeLeft({ text: "Sesi Sedang Berlangsung!", isLive: true, isPast: false })
+        return
+      }
+
+      if (now > end) {
+        setTimeLeft({ text: "Sesi Selesai", isLive: false, isPast: true })
+        return
+      }
+
+      const diff = start - now
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+
+      if (days > 0) {
+        setTimeLeft({
+          text: `Mulai dalam ${days} hari ${hours} jam lagi`,
+          isLive: false,
+          isPast: false,
+        })
+      } else if (hours > 0) {
+        setTimeLeft({
+          text: `Mulai dalam ${hours} jam ${minutes} menit lagi`,
+          isLive: false,
+          isPast: false,
+        })
+      } else {
+        setTimeLeft({
+          text: `Mulai dalam ${Math.max(1, minutes)} menit lagi`,
+          isLive: minutes <= 15,
+          isPast: false,
+        })
+      }
+    }
+
+    calculateTime()
+    const timer = setInterval(calculateTime, 30_000)
+    return () => clearInterval(timer)
+  }, [startsAt, endsAt])
+
+  if (!timeLeft.text || timeLeft.isPast) {
+    return null
+  }
+
+  return (
+    <div
+      className={cn(
+        "inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold transition-all",
+        timeLeft.isLive
+          ? "border border-emerald-300 bg-emerald-50 text-emerald-700 animate-pulse"
+          : "border border-primary/20 bg-brand-mint/60 text-primary"
+      )}
+    >
+      <span
+        className={cn(
+          "size-2 rounded-full",
+          timeLeft.isLive ? "bg-emerald-600 animate-ping" : "bg-primary"
+        )}
+      />
+      <Clock className="size-3.5" />
+      <span>{timeLeft.text}</span>
+    </div>
+  )
+}
+
 function NextSchedulePanel({ enrollment }: { enrollment: ClassEnrollment }) {
   const sessions = enrollment.schedule?.sessions ?? []
   const nextSession = getNextSession(sessions)
   const enrollmentMeta = enrollmentStatusMeta[enrollment.status]
 
+  const calendarUrl = nextSession
+    ? getGoogleCalendarUrl({
+        title: `${enrollment.classSnapshot.displayName} - ${nextSession.title || `Sesi ${nextSession.sessionNumber}`}`,
+        description: `Kelas bahasa LKP SlangTech bersama ${nextSession.teacherName || "Tutor"}`,
+        startsAt: nextSession.startsAt,
+        endsAt: nextSession.endsAt,
+        meetingUrl: nextSession.meetingUrl,
+      })
+    : null
+
   return (
-    <section className="rounded-lg border border-border bg-white p-5 shadow-sm sm:p-6">
+    <section className="relative overflow-hidden rounded-xl border border-border bg-white p-5 shadow-sm transition hover:shadow-md sm:p-6">
+      {/* Accent gradient line */}
+      <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-primary via-brand-lime to-primary" />
+
       <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <p className="flex items-center gap-2 text-sm font-black text-primary">
-            <CalendarCheck2 className="size-5" />
-            Kelas Berikutnya
-          </p>
-          <h2 className="mt-3 text-2xl font-black tracking-normal text-foreground sm:text-3xl">
+        <div className="min-w-0 space-y-2">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <p className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-primary">
+              <CalendarCheck2 className="size-4" />
+              Kelas Berikutnya
+            </p>
+            {nextSession && (
+              <SessionCountdown startsAt={nextSession.startsAt} endsAt={nextSession.endsAt} />
+            )}
+          </div>
+          <h2 className="text-2xl font-black tracking-normal text-foreground sm:text-3xl">
             {nextSession?.title || (nextSession ? `Sesi ${nextSession.sessionNumber}` : enrollment.classSnapshot.displayName)}
           </h2>
-          <p className="mt-2 text-sm font-medium leading-6 text-muted-foreground">
+          <p className="text-sm font-medium leading-6 text-muted-foreground">
             {enrollment.classSnapshot.displayName}
           </p>
         </div>
@@ -547,43 +707,57 @@ function NextSchedulePanel({ enrollment }: { enrollment: ClassEnrollment }) {
       </div>
 
       {nextSession ? (
-        <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-end">
+        <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-end">
           <div className="grid gap-3 sm:grid-cols-3">
-            <div className="border-l-2 border-brand-lime pl-4">
-              <p className="text-sm font-bold text-muted-foreground">Tanggal</p>
-              <p className="mt-1 text-lg font-black text-foreground">
+            <div className="rounded-lg border border-border/60 bg-brand-surface/60 p-3.5">
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Hari & Tanggal</p>
+              <p className="mt-1 text-base font-black text-foreground">
                 {formatScheduleDay(nextSession.startsAt, nextSession.timezone)}
               </p>
             </div>
-            <div className="border-l-2 border-border pl-4">
-              <p className="text-sm font-bold text-muted-foreground">Jam</p>
-              <p className="mt-1 text-lg font-black text-foreground">
+            <div className="rounded-lg border border-border/60 bg-brand-surface/60 p-3.5">
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Jam Belajar</p>
+              <p className="mt-1 text-base font-black text-foreground">
                 {formatScheduleTime(nextSession.startsAt, nextSession.timezone)}
                 {" - "}
                 {formatScheduleTime(nextSession.endsAt, nextSession.timezone)}
               </p>
             </div>
-            <div className="border-l-2 border-border pl-4">
-              <p className="text-sm font-bold text-muted-foreground">Tutor</p>
-              <p className="mt-1 text-lg font-black text-foreground">
+            <div className="rounded-lg border border-border/60 bg-brand-surface/60 p-3.5">
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Tutor</p>
+              <p className="mt-1 text-base font-black text-foreground">
                 {nextSession.teacherName || "Teacher LKP SlangTech"}
               </p>
             </div>
           </div>
 
-          <div className="grid gap-3">
-            <p className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              {nextSession.locationType === "online" ? (
-                <Video className="size-4 text-primary" />
-              ) : (
-                <MapPin className="size-4 text-primary" />
+          <div className="grid gap-2.5">
+            <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                {nextSession.locationType === "online" ? (
+                  <Video className="size-3.5 text-primary" />
+                ) : (
+                  <MapPin className="size-3.5 text-primary" />
+                )}
+                {nextSession.locationLabel || (nextSession.locationType === "online" ? "Online Class" : "Offline Class")}
+              </span>
+              {calendarUrl && (
+                <Link
+                  href={calendarUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1 font-bold text-primary hover:underline"
+                >
+                  <CalendarPlus className="size-3.5" />
+                  + Google Cal
+                </Link>
               )}
-              {nextSession.locationLabel || (nextSession.locationType === "online" ? "Online Class" : "Offline Class")}
-            </p>
+            </div>
+
             {nextSession.meetingUrl ? (
-              <Button asChild className="h-12 w-full bg-brand-green-deep text-sm font-black uppercase hover:bg-brand-green-deep/90">
+              <Button asChild className="h-12 w-full bg-brand-green-deep text-sm font-black uppercase tracking-wider hover:bg-brand-green-deep/90 shadow-sm">
                 <Link href={nextSession.meetingUrl} target="_blank" rel="noreferrer">
-                  Masuk Kelas
+                  Masuk Kelas Sekarang
                   <ArrowRight className="size-4" />
                 </Link>
               </Button>
@@ -860,17 +1034,47 @@ function ReschedulePanel({
   )
 }
 
+function CopyAccountButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // fallback
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-white px-2.5 py-1 text-xs font-bold text-primary transition hover:bg-brand-mint active:scale-95"
+      title="Salin nomor rekening"
+    >
+      {copied ? <Check className="size-3.5 text-emerald-600" /> : <Copy className="size-3.5" />}
+      <span>{copied ? "Tersalin!" : "Salin Rekening"}</span>
+    </button>
+  )
+}
+
 function PaymentPanel({ enrollment }: { enrollment: DashboardEnrollment }) {
   const paymentMeta = paymentStatusMeta[enrollment.payment.status]
   const paymentDate = getPaymentReferenceDate(enrollment)
   const displayName = getEnrollmentDisplayName(enrollment)
   const selectedPrice = getEnrollmentSelectedPrice(enrollment)
+  const isUnpaidOrPending =
+    enrollment.payment.status === "unpaid" ||
+    enrollment.payment.status === "pending" ||
+    enrollment.payment.status === "waiting_confirmation"
 
   return (
-    <section className="rounded-lg border border-border bg-white p-5 shadow-sm transition hover:border-primary/20 hover:shadow-md">
+    <section className="rounded-xl border border-border bg-white p-5 shadow-sm transition hover:border-primary/20 hover:shadow-md sm:p-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 items-start gap-3">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-brand-mint text-primary">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-mint text-primary">
             {enrollment.payment.status === "paid" ? (
               <CheckCircle2 className="size-5" />
             ) : enrollment.payment.method === "free" ? (
@@ -896,19 +1100,40 @@ function PaymentPanel({ enrollment }: { enrollment: DashboardEnrollment }) {
       </div>
 
       <div className="mt-5 border-t border-border pt-4">
-        <p className="text-sm font-bold text-muted-foreground">Total Pembayaran</p>
-        <p className="mt-1 text-2xl font-black tracking-normal text-foreground">
-          {formatPrice(enrollment.payment.amount || selectedPrice)}
-        </p>
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Total Pembayaran</p>
+            <p className="mt-1 text-2xl font-black tracking-normal text-foreground">
+              {formatPrice(enrollment.payment.amount || selectedPrice)}
+            </p>
+          </div>
+          {isUnpaidOrPending && enrollment.payment.method === "manual" && (
+            <CopyAccountButton text={manualPaymentAccount.accountNumber} />
+          )}
+        </div>
+
+        {isUnpaidOrPending && enrollment.payment.method === "manual" && (
+          <div className="mt-4 rounded-lg border border-primary/20 bg-brand-mint/40 p-3.5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-xs font-bold text-muted-foreground">{manualPaymentAccount.bankName}</p>
+                <p className="mt-0.5 text-base font-black tracking-wide text-foreground">
+                  {manualPaymentAccount.accountNumber}
+                </p>
+                <p className="text-xs text-muted-foreground">a.n. {manualPaymentAccount.accountHolderName}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <div className="rounded-lg border border-border bg-brand-surface px-3 py-3">
-            <p className="text-sm font-bold text-muted-foreground">Tanggal</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Tanggal</p>
             <p className="mt-1 break-words text-sm font-black text-foreground">{formatScheduleDay(paymentDate)}</p>
           </div>
 
           <div className="rounded-lg border border-border bg-brand-surface px-3 py-3">
-            <p className="text-sm font-bold text-muted-foreground">Metode</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Metode</p>
             <p className="mt-1 break-words text-sm font-black text-foreground">{getPaymentMethodLabel(enrollment)}</p>
           </div>
         </div>
@@ -990,9 +1215,9 @@ function DashboardBottomNav({
   return (
     <nav
       aria-label="Dashboard navigation"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-white/95 px-3 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 shadow-[0_-14px_36px_rgba(17,24,39,0.08)] backdrop-blur-xl lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[calc(env(safe-area-inset-bottom)+0.6rem)] pt-2 pointer-events-none lg:hidden"
     >
-      <div className="mx-auto grid w-full max-w-screen-sm grid-cols-5 gap-1">
+      <div className="mx-auto flex w-full max-w-md items-center justify-between rounded-2xl border border-white/80 bg-white/90 p-1.5 shadow-[0_12px_40px_rgba(7,95,56,0.12)] backdrop-blur-xl pointer-events-auto">
         {dashboardNavItems.map((item) => {
           const Icon = item.icon
           const isActive = item.id === activeView
@@ -1003,21 +1228,29 @@ function DashboardBottomNav({
               type="button"
               onClick={() => onChange(item.id)}
               className={cn(
-                "group flex min-h-16 flex-col items-center justify-center gap-1 rounded-md px-1 text-sm font-bold text-muted-foreground transition focus-visible:ring-[3px] focus-visible:ring-ring/50",
-                isActive ? "bg-brand-mint text-primary" : "hover:bg-brand-surface hover:text-foreground",
+                "relative flex flex-1 flex-col items-center justify-center py-2 px-1 rounded-xl transition-all duration-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
+                isActive
+                  ? "bg-brand-mint text-primary font-black shadow-xs"
+                  : "text-muted-foreground hover:text-foreground hover:bg-brand-surface/80",
               )}
             >
+              <div className="relative">
+                <Icon
+                  className={cn(
+                    "size-5 transition-transform duration-200",
+                    isActive ? "scale-110 text-primary" : "text-muted-foreground"
+                  )}
+                />
+                {isActive && (
+                  <span className="absolute -top-1 -right-1 size-1.5 rounded-full bg-primary" />
+                )}
+              </div>
               <span
                 className={cn(
-                  "flex h-8 min-w-10 items-center justify-center rounded-full px-2 transition",
-                  isActive
-                    ? "bg-white text-primary shadow-sm"
-                    : "text-muted-foreground group-hover:bg-brand-surface group-hover:text-foreground",
+                  "mt-1 text-[11px] font-bold leading-none tracking-tight transition-colors",
+                  isActive ? "text-primary" : "text-muted-foreground"
                 )}
               >
-                <Icon className="size-5" />
-              </span>
-              <span className={cn("leading-tight", isActive ? "text-primary" : "text-muted-foreground")}>
                 {item.label}
               </span>
             </button>
@@ -2276,12 +2509,82 @@ export function HomeDashboard() {
   }
 
   if (guardState !== "ready") {
+    if (guardState === "redirecting") {
+      return (
+        <div className="mx-auto w-full max-w-xl px-6 pb-16 pt-28 md:pt-32">
+          <LoadingCard
+            title="Mengarahkan akun..."
+            description="Kami cek sesi, profil, dan data kelas serta event kamu dulu."
+          />
+        </div>
+      )
+    }
+
     return (
-      <div className="mx-auto w-full max-w-xl px-6 pb-16 pt-28 md:pt-32">
-        <LoadingCard
-          title={guardState === "redirecting" ? "Mengarahkan akun..." : "Menyiapkan dashboard..."}
-          description="Kami cek sesi, profil, dan data kelas serta event kamu dulu."
-        />
+      <div className="bg-brand-surface px-6 pb-32 pt-24 lg:pb-16 lg:pt-28">
+        <div className="mx-auto grid w-full max-w-7xl gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+          {/* Skeleton Sidebar (Desktop) */}
+          <aside className="hidden lg:block">
+            <div className="sticky top-28 space-y-4 rounded-xl border border-border bg-white p-4 shadow-sm">
+              <div className="rounded-lg bg-brand-surface p-4 space-y-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-3 w-44" />
+              </div>
+              <div className="space-y-1 pt-2">
+                {Array.from({ length: 5 }, (_, i) => (
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-lg">
+                    <Skeleton className="size-5 rounded-md" />
+                    <div className="space-y-1.5 flex-1">
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-3 w-28" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </aside>
+
+          {/* Skeleton Main Content */}
+          <main className="min-w-0 space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-4 w-72" />
+              </div>
+              <Skeleton className="size-10 rounded-lg" />
+            </div>
+
+            {/* Skeleton Next Schedule Card */}
+            <div className="relative overflow-hidden rounded-xl border border-border bg-white p-6 shadow-sm space-y-6">
+              <div className="flex items-start justify-between">
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-28" />
+                  <Skeleton className="h-7 w-60" />
+                  <Skeleton className="h-4 w-36" />
+                </div>
+                <Skeleton className="h-6 w-24 rounded-full" />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <Skeleton className="h-16 rounded-lg" />
+                <Skeleton className="h-16 rounded-lg" />
+                <Skeleton className="h-16 rounded-lg" />
+              </div>
+              <Skeleton className="h-12 w-full rounded-lg" />
+            </div>
+
+            {/* Skeleton Quick Class List */}
+            <div className="rounded-xl border border-border bg-white p-6 shadow-sm space-y-4">
+              <div className="flex justify-between items-center">
+                <Skeleton className="h-5 w-32" />
+                <Skeleton className="h-4 w-20" />
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Skeleton className="h-36 rounded-lg" />
+                <Skeleton className="h-36 rounded-lg" />
+              </div>
+            </div>
+          </main>
+        </div>
       </div>
     )
   }

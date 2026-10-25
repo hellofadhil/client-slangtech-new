@@ -6,6 +6,9 @@ import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { useIsMobile } from "@/hooks/use-mobile"
 
+import { HexagonPattern } from "@/components/ui/hexagon-pattern"
+import { cn } from "@/lib/utils"
+
 const springConfig = { stiffness: 100, damping: 30, restDelta: 0.001 }
 
 const fadeUpVariants = {
@@ -16,7 +19,7 @@ const fadeUpVariants = {
     transition: {
       delay: i * 0.1,
       duration: 0.8,
-      ease: [0.25, 0.4, 0.25, 1],
+      ease: [0.25, 0.4, 0.25, 1] as const,
     },
   }),
 }
@@ -46,6 +49,32 @@ export function HeroSection() {
     >
       {/* Fixed navbar height background */}
       <div className="absolute inset-x-0 top-0 h-20 bg-brand-mint/70" />
+
+      {/* Hexagon Pattern from Magic UI (positioned below navbar with smooth top fade) */}
+      <div className="pointer-events-none absolute inset-x-0 top-20 bottom-0 overflow-hidden">
+        <HexagonPattern
+          hexagons={[
+            [1, 1],
+            [4, 4],
+            [2, 2],
+            [3, 4],
+            [5, 4],
+            [8, 2],
+            [6, 3],
+            [8, 5],
+            [10, 8],
+            [7, 7],
+            [2, 6],
+          ]}
+          radius={36}
+          gap={4}
+          className={cn(
+            "fill-brand-green/20 stroke-brand-green/30",
+            "[mask-image:radial-gradient(650px_circle_at_center,white,transparent)]",
+            "inset-0 skew-y-3"
+          )}
+        />
+      </div>
 
       {/* Background glow circle */}
       <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 size-[500px] md:size-[650px] rounded-full bg-brand-mint/60 blur-[100px]" />
@@ -101,7 +130,7 @@ export function HeroSection() {
             custom={4}
             className="flex flex-wrap justify-center gap-3 pt-2"
           >
-            <Link href="/classes">
+            <Link href="#classes">
               <motion.span
                 className="bg-primary text-primary-foreground px-6 py-3 rounded-full font-bold text-sm tracking-wide flex items-center gap-2 group relative overflow-hidden shadow-md shadow-primary/25 hover:bg-brand-green-strong transition-colors"
                 whileHover={{ scale: 1.02 }}
@@ -113,7 +142,7 @@ export function HeroSection() {
                   whileHover={{ x: "200%" }}
                   transition={{ duration: 0.6 }}
                 />
-                <span className="relative z-10">Lihat Kelas</span>
+                <span className="relative z-10">Lihat Pilihan Kelas</span>
                 <motion.span
                   className="relative z-10 inline-flex"
                   initial={{ x: 0 }}
@@ -135,7 +164,7 @@ export function HeroSection() {
                 whileTap={{ scale: 0.98 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
-                Konsultasi
+                Konsultasi Sekarang
               </motion.span>
             </Link>
           </motion.div>
@@ -147,7 +176,7 @@ export function HeroSection() {
             custom={5}
             className="flex flex-wrap items-center justify-center gap-2.5 pt-3 max-w-xl mx-auto"
           >
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/80">
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Pilihan Bahasa:
             </span>
             {["Mandarin", "Cantonese", "English", "Japanese"].map((language, i) => (
