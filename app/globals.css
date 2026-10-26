@@ -4,7 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: #ffffff;
+  --background: #fbfcfb;
   --foreground: #111827;
   --card: #ffffff;
   --card-foreground: #111827;
@@ -12,16 +12,16 @@
   --popover-foreground: #111827;
   --primary: #0b8741;
   --primary-foreground: #ffffff;
-  --secondary: #f9fafb;
+  --secondary: #f4f6f4;
   --secondary-foreground: #111827;
-  --muted: #f3f4f6;
+  --muted: #edf0ed;
   --muted-foreground: #374151;
   --accent: #eafbea;
   --accent-foreground: #0a7f3d;
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: #e5e7eb;
-  --input: #e5e7eb;
+  --border: #e3e7e3;
+  --input: #e3e7e3;
   --ring: #0b8741;
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
@@ -29,24 +29,24 @@
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
   --radius: 0.5rem;
-  --sidebar: #ffffff;
+  --sidebar: #fbfcfb;
   --sidebar-foreground: #111827;
   --sidebar-primary: #0b8741;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #eafbea;
   --sidebar-accent-foreground: #0a7f3d;
-  --sidebar-border: #e5e7eb;
+  --sidebar-border: #e3e7e3;
   --sidebar-ring: #0b8741;
 
   /* Custom SlangTech colors */
   --brand-ink: #111827;
-  --brand-border: #e5e7eb;
+  --brand-border: #e3e7e3;
   --brand-green: #0b8741;
   --brand-green-strong: #0a7f3d;
   --brand-green-deep: #075f38;
   --brand-mint: #eafbea;
   --brand-lime: #d9f99d;
-  --brand-surface: #f9fafb;
+  --brand-surface: #f4f6f4;
   --lime: var(--brand-lime);
   --charcoal: var(--brand-ink);
   --pineapple: var(--brand-green-strong);

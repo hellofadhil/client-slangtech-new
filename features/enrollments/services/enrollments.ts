@@ -21,6 +21,8 @@ export type ManualPaymentDetails = {
   bankName: string
   accountNumber: string
   accountHolderName: string
+  senderBankName?: string
+  senderAccountName?: string
   proofUrl: string
   proofFileName: string
   proofContentType: string
@@ -552,6 +554,8 @@ function createManualPaymentSnapshot(payment: ManualPaymentDetails): FirestoreCo
     bankName: payment.bankName,
     accountNumber: payment.accountNumber,
     accountHolderName: payment.accountHolderName,
+    senderBankName: payment.senderBankName || null,
+    senderAccountName: payment.senderAccountName || null,
     proofUrl: payment.proofUrl,
     proofFileName: payment.proofFileName,
     proofContentType: payment.proofContentType,
@@ -908,6 +912,8 @@ function mapManualPayment(value: unknown): ManualPaymentDetails {
     bankName: asString(fields.bankName),
     accountNumber: asString(fields.accountNumber),
     accountHolderName: asString(fields.accountHolderName),
+    senderBankName: asString(fields.senderBankName) || undefined,
+    senderAccountName: asString(fields.senderAccountName) || undefined,
     proofUrl: asString(fields.proofUrl),
     proofFileName: asString(fields.proofFileName),
     proofContentType: asString(fields.proofContentType),
@@ -1376,6 +1382,8 @@ export function createManualEnrollmentPayment(params: {
   proofUrl: string
   proofFile: File
   uploadResponse: unknown
+  senderBankName?: string
+  senderAccountName?: string
 }): EnrollmentPayment {
   return {
     method: "manual",
@@ -1384,6 +1392,8 @@ export function createManualEnrollmentPayment(params: {
     currency: "IDR",
     manual: {
       ...manualPaymentAccount,
+      senderBankName: params.senderBankName?.trim() || undefined,
+      senderAccountName: params.senderAccountName?.trim() || undefined,
       proofUrl: params.proofUrl,
       proofFileName: getUploadString(params.uploadResponse, "fileName", params.proofFile.name),
       proofContentType: getUploadString(

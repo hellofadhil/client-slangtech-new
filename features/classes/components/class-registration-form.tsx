@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react"
 import {
   ArrowLeft,
+  ArrowRight,
   Banknote,
+  Check,
   CheckCircle2,
   Clock3,
-  CreditCard,
+  Copy,
   FileUp,
   LockKeyhole,
   UploadCloud,
@@ -25,8 +27,6 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { LoadingCard, Spinner } from "@/components/ui/spinner"
 import { Textarea } from "@/components/ui/textarea"
 import { createAuthRedirectPath, getCurrentPathAsReturnTo } from "@/features/auth/services/auth-redirect"
@@ -100,9 +100,12 @@ export function ClassRegistrationForm({ classItem }: ClassRegistrationFormProps)
   const [guardState, setGuardState] = useState<GuardState>("checking")
   const [session, setSession] = useState<UserSession | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [currentStep, setCurrentStep] = useState<1 | 2>(1)
   const [reason, setReason] = useState("")
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("manual")
   const [paymentProof, setPaymentProof] = useState<File | null>(null)
+  const [senderBankName, setSenderBankName] = useState("")
+  const [senderAccountName, setSenderAccountName] = useState("")
+  const [copiedAccount, setCopiedAccount] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submittedEnrollmentId, setSubmittedEnrollmentId] = useState("")
@@ -162,10 +165,34 @@ export function ClassRegistrationForm({ classItem }: ClassRegistrationFormProps)
     }
   }, [classItem, router])
 
-  const handlePaymentMethodChange = (value: string) => {
-    if (value === "manual" || value === "payment_gateway") {
-      setPaymentMethod(value)
+  const handleCopyAccount = async () => {
+    try {
+      await navigator.clipboard.writeText(manualPaymentAccount.accountNumber)
+      setCopiedAccount(true)
+      setTimeout(() => setCopiedAccount(false), 2000)
+    } catch {
+      // fallback
     }
+  }
+
+  const handleNextToPayment = (event: FormEvent) => {
+    event.preventDefault()
+    const trimmedReason = reason.trim()
+
+    if (!trimmedReason) {
+      setErrorMessage("Alasan mengikuti kelas wajib diisi sebelum lanjut ke pembayaran.")
+      return
+    }
+
+    setErrorMessage("")
+    setCurrentStep(2)
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
+  const handleBackToStep1 = () => {
+    setErrorMessage("")
+    setCurrentStep(1)
+    window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -199,11 +226,7 @@ export function ClassRegistrationForm({ classItem }: ClassRegistrationFormProps)
 
     if (!trimmedReason) {
       setErrorMessage("Alasan mengikuti kelas wajib diisi.")
-      return
-    }
-
-    if (paymentMethod !== "manual") {
-      setErrorMessage("Payment gateway belum tersedia. Gunakan pembayaran manual dulu ya.")
+      setCurrentStep(1)
       return
     }
 
@@ -226,6 +249,8 @@ export function ClassRegistrationForm({ classItem }: ClassRegistrationFormProps)
         proofUrl: uploadResult.proofUrl,
         proofFile: paymentProof,
         uploadResponse: uploadResult.rawResponse,
+        senderBankName,
+        senderAccountName,
       })
       const enrollmentId = await saveClassEnrollment(session, {
         classItem,
@@ -379,7 +404,7 @@ export function ClassRegistrationForm({ classItem }: ClassRegistrationFormProps)
         </div>
       </section>
 
-      <section className="rounded-lg border border-border bg-white p-5 shadow-sm sm:p-6">
+      <section className="rounded-xl border border-border bg-white p-5 shadow-sm sm:p-6">
         <div className="mb-6">
           <Link
             href="/classes"
@@ -388,116 +413,197 @@ export function ClassRegistrationForm({ classItem }: ClassRegistrationFormProps)
             <ArrowLeft className="size-4" />
             Kembali ke daftar kelas
           </Link>
+
+          {/* Stepper indicator */}
+          <div className="mt-5 flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <span
+                className={cn(
+                  "flex size-7 items-center justify-center rounded-full text-xs font-black transition",
+                  currentStep === 1
+                    ? "bg-primary text-white shadow-sm"
+                    : "bg-brand-mint text-primary border border-primary/30"
+                )}
+              >
+                1
+              </span>
+              <span className={cn("text-sm font-bold", currentStep === 1 ? "text-foreground" : "text-muted-foreground")}>
+                Alasan Belajar
+              </span>
+            </div>
+
+            <div className="h-0.5 w-8 bg-border" />
+
+            <div className="flex items-center gap-2">
+              <span
+                className={cn(
+                  "flex size-7 items-center justify-center rounded-full text-xs font-black transition",
+                  currentStep === 2
+                    ? "bg-primary text-white shadow-sm"
+                    : "bg-muted text-muted-foreground"
+                )}
+              >
+                2
+              </span>
+              <span className={cn("text-sm font-bold", currentStep === 2 ? "text-foreground" : "text-muted-foreground")}>
+                Pembayaran
+              </span>
+            </div>
+          </div>
+
           <h1 className="mt-4 text-2xl font-black tracking-normal text-foreground sm:text-3xl">
-            Daftar Kelas
+            {currentStep === 1 ? "Alasan Mengikuti Kelas" : "Pembayaran Biaya Kelas"}
           </h1>
           <p className="mt-2 text-sm leading-7 text-muted-foreground">
-            Lengkapi alasan mengikuti kelas, pilih metode pembayaran, lalu upload bukti transfer.
+            {currentStep === 1
+              ? "Ceritakan tujuan belajarmu agar materi bisa disesuaikan dengan kebutuhanmu."
+              : "Transfer ke rekening resmi LKP SlangTech dan upload bukti transfer untuk konfirmasi."}
           </p>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <FieldGroup>
-            {errorMessage && <FieldError>{errorMessage}</FieldError>}
+        {errorMessage && (
+          <div className="mb-6">
+            <FieldError>{errorMessage}</FieldError>
+          </div>
+        )}
 
-            <Field>
-              <FieldLabel htmlFor="reason">Alasan Mengikuti Kelas</FieldLabel>
-              <Textarea
-                id="reason"
-                value={reason}
-                onChange={(event) => setReason(event.target.value)}
-                placeholder="Ceritakan tujuan belajar dan target yang ingin kamu capai."
-                className="min-h-32"
-                required
-              />
-              <FieldDescription>
-                Jawaban ini membantu tim menyesuaikan arahan belajar sebelum kelas dimulai.
-              </FieldDescription>
-            </Field>
+        {currentStep === 1 ? (
+          <form onSubmit={handleNextToPayment}>
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="reason">Alasan Mengikuti Kelas</FieldLabel>
+                <Textarea
+                  id="reason"
+                  value={reason}
+                  onChange={(event) => setReason(event.target.value)}
+                  placeholder="Ceritakan tujuan belajar dan target yang ingin kamu capai (misal: persiapan kerja ke luar negeri, kebutuhan percakapan harian, atau sertifikasi)."
+                  className="min-h-36"
+                  required
+                />
+                <FieldDescription>
+                  Jawaban ini membantu tim kami menyesuaikan arahan belajar sebelum kelas dimulai.
+                </FieldDescription>
+              </Field>
 
-            <Field>
-              <FieldLabel>Metode Pembayaran</FieldLabel>
-              <RadioGroup value={paymentMethod} onValueChange={handlePaymentMethodChange}>
-                <Label
-                  htmlFor="payment-manual"
-                  className={cn(
-                    "flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-white p-4 transition hover:border-primary/50",
-                    paymentMethod === "manual" && "border-primary bg-brand-mint/40",
-                  )}
-                >
-                  <RadioGroupItem id="payment-manual" value="manual" className="mt-1" />
-                  <span className="flex-1">
-                    <span className="flex items-center gap-2 text-sm font-bold text-foreground">
-                      <Banknote className="size-4 text-primary" />
-                      Pembayaran Manual
-                    </span>
-                    <span className="mt-1 block text-sm leading-6 text-muted-foreground">
-                      Transfer ke rekening LKP SlangTech, upload bukti pembayaran, lalu tunggu
-                      konfirmasi admin.
-                    </span>
-                  </span>
-                </Label>
-
-                <Label
-                  htmlFor="payment-gateway"
-                  className="flex cursor-not-allowed items-start gap-3 rounded-lg border border-border bg-brand-surface p-4 opacity-70"
-                >
-                  <RadioGroupItem id="payment-gateway" value="payment_gateway" disabled className="mt-1" />
-                  <span className="flex-1">
-                    <span className="flex items-center gap-2 text-sm font-bold text-foreground">
-                      <CreditCard className="size-4 text-muted-foreground" />
-                      Payment Gateway
-                      <Badge variant="outline">Segera hadir</Badge>
-                    </span>
-                    <span className="mt-1 block text-sm leading-6 text-muted-foreground">
-                      Pembayaran otomatis akan tersedia setelah integrasi gateway aktif.
-                    </span>
-                  </span>
-                </Label>
-              </RadioGroup>
-            </Field>
-
-            <Alert className="border-primary/20 bg-brand-mint/40 text-foreground">
-              <AlertTitle>Petunjuk Pembayaran</AlertTitle>
-              <AlertDescription>
-                <p>Transfer biaya kelas ke rekening berikut:</p>
-                <div className="my-2 grid gap-1 text-sm">
-                  <p className="font-bold text-foreground">{manualPaymentAccount.bankName}</p>
-                  <p>No. Rek: {manualPaymentAccount.accountNumber}</p>
-                  <p>a.n. {manualPaymentAccount.accountHolderName}</p>
+              <Button type="submit" size="lg" className="w-full font-bold">
+                Lanjut ke Pembayaran
+                <ArrowRight className="size-4" />
+              </Button>
+            </FieldGroup>
+          </form>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            <FieldGroup>
+              {/* Petunjuk Pembayaran & Rekening */}
+              <div className="rounded-xl border border-primary/20 bg-brand-mint/40 p-5 space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Banknote className="size-5 text-primary" />
+                    <p className="font-bold text-foreground">Transfer Bank Manual</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCopyAccount}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-white px-3 py-1.5 text-xs font-bold text-primary shadow-xs transition hover:bg-brand-mint active:scale-95"
+                  >
+                    {copiedAccount ? <Check className="size-3.5 text-emerald-600" /> : <Copy className="size-3.5" />}
+                    <span>{copiedAccount ? "Tersalin!" : "Salin No. Rekening"}</span>
+                  </button>
                 </div>
-                <p>Simpan bukti pembayaran berupa screenshot atau foto.</p>
-                <p>Upload bukti pembayaran pada form pendaftaran.</p>
-                <p>Tunggu konfirmasi dari admin maksimal 1x24 jam.</p>
-              </AlertDescription>
-            </Alert>
 
-            <Field>
-              <FieldLabel htmlFor="paymentProof">Upload Bukti Pembayaran</FieldLabel>
-              <Input
-                id="paymentProof"
-                type="file"
-                accept="image/*,.pdf"
-                onChange={handleFileChange}
-                required
-              />
-              <FieldDescription>
-                Format gambar atau PDF, maksimal 1,5 MB. File gambar akan dikompres sebelum disimpan.
-              </FieldDescription>
-              {paymentProof && (
-                <div className="flex items-center gap-2 rounded-md border border-border bg-brand-surface px-3 py-2 text-sm text-muted-foreground">
-                  <FileUp className="size-4 text-primary" />
-                  <span className="truncate">{paymentProof.name}</span>
+                <div className="rounded-lg border border-border/80 bg-white p-4 space-y-1">
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    {manualPaymentAccount.bankName}
+                  </p>
+                  <p className="text-xl font-black tracking-wide text-foreground">
+                    {manualPaymentAccount.accountNumber}
+                  </p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    a.n. {manualPaymentAccount.accountHolderName}
+                  </p>
                 </div>
-              )}
-            </Field>
 
-            <Button type="submit" size="lg" disabled={isSubmitting} className="w-full">
-              {isSubmitting ? <Spinner /> : <UploadCloud className="size-4" />}
-              {isSubmitting ? "Mengirim Pendaftaran..." : "Kirim Pendaftaran"}
-            </Button>
-          </FieldGroup>
-        </form>
+                <div className="text-xs space-y-1 text-muted-foreground leading-relaxed">
+                  <p>1. Transfer biaya kelas sejumlah <strong className="text-foreground">{formatPrice(selectedPrice)}</strong> ke rekening di atas.</p>
+                  <p>2. Simpan foto atau tangkapan layar bukti transfer yang jelas.</p>
+                  <p>3. Upload file bukti di bawah dan klik Kirim Pendaftaran.</p>
+                </div>
+              </div>
+
+              <Field>
+                <FieldLabel htmlFor="paymentProof">Upload Bukti Pembayaran</FieldLabel>
+                <Input
+                  id="paymentProof"
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={handleFileChange}
+                  required
+                />
+                <FieldDescription>
+                  Format file gambar (JPG, PNG) atau PDF, maksimal 1,5 MB.
+                </FieldDescription>
+                {paymentProof && (
+                  <div className="flex items-center gap-2 rounded-md border border-border bg-brand-surface px-3 py-2 text-sm text-muted-foreground">
+                    <FileUp className="size-4 text-primary" />
+                    <span className="truncate font-medium text-foreground">{paymentProof.name}</span>
+                  </div>
+                )}
+              </Field>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field>
+                  <FieldLabel htmlFor="senderBankName">Nama Bank / E-Wallet Pengirim</FieldLabel>
+                  <Input
+                    id="senderBankName"
+                    type="text"
+                    value={senderBankName}
+                    onChange={(event) => setSenderBankName(event.target.value)}
+                    placeholder="Contoh: BCA, Mandiri, BSI, GoPay, Dana"
+                  />
+                  <FieldDescription>
+                    Bank atau e-wallet yang kamu gunakan untuk transfer (opsional).
+                  </FieldDescription>
+                </Field>
+
+                <Field>
+                  <FieldLabel htmlFor="senderAccountName">Nama Pemilik Rekening Pengirim</FieldLabel>
+                  <Input
+                    id="senderAccountName"
+                    type="text"
+                    value={senderAccountName}
+                    onChange={(event) => setSenderAccountName(event.target.value)}
+                    placeholder="Contoh: Budi Santoso"
+                  />
+                  <FieldDescription>
+                    Nama yang tertera pada rekening atau akun pengirim (opsional).
+                  </FieldDescription>
+                </Field>
+              </div>
+
+              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleBackToStep1}
+                  disabled={isSubmitting}
+                  className="sm:w-1/3"
+                >
+                  <ArrowLeft className="size-4" />
+                  Kembali
+                </Button>
+                <Button
+                  type="submit"
+                  size="lg"
+                  disabled={isSubmitting}
+                  className="w-full sm:flex-1 font-bold"
+                >
+                  {isSubmitting ? <Spinner /> : <UploadCloud className="size-4" />}
+                  {isSubmitting ? "Mengirim Pendaftaran..." : "Kirim Pendaftaran"}
+                </Button>
+              </div>
+            </FieldGroup>
+          </form>
+        )}
       </section>
     </div>
   )
