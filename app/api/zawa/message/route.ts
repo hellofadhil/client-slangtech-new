@@ -2,8 +2,10 @@ import { NextResponse } from "next/server"
 
 export const runtime = "nodejs"
 
-const ZAWA_MESSAGE_URL = "https://manage.slangtech.asia/api/zawa/message"
-const ZAWA_MESSAGE_TIMEOUT_MS = 8000
+const DEFAULT_WA_BASE_URL = "https://api-wa.baselab.web.id"
+const DEFAULT_WA_BOT_NAME = "marketing_bot"
+const DASHBOARD_WA_URL = "https://manage.slangtech.asia/api/whatsapp/message"
+const WA_MESSAGE_TIMEOUT_MS = 10000
 
 type FirebaseLookupResponse = {
   users?: Array<{
@@ -11,12 +13,13 @@ type FirebaseLookupResponse = {
   }>
 }
 
-type ZawaMessageRequest = {
+type WhatsAppMessageRequest = {
   idToken?: string
   uid?: string
   phone?: string
   type?: "text"
   text?: string
+  message?: string
 }
 
 function jsonError(message: string, status: number) {
@@ -28,16 +31,6 @@ function getRequiredFirebaseApiKey() {
 
   if (!apiKey) {
     throw new Error("Konfigurasi Firebase belum lengkap.")
-  }
-
-  return apiKey
-}
-
-function getRequiredZawaApiKey() {
-  const apiKey = process.env.ZAWA_MESSAGE_API_KEY
-
-  if (!apiKey) {
-    throw new Error("Konfigurasi Zawa message API belum lengkap.")
   }
 
   return apiKey
@@ -67,68 +60,100 @@ async function verifyFirebaseUser(idToken: string, expectedUserId: string) {
 }
 
 function normalizePhoneNumber(value: string) {
-  return value.replace(/[^\d]/g, "").replace(/^0+/, "")
+  let cleaned = value.replace(/\D/g, "")
+  if (cleaned.startsWith("0")) {
+    cleaned = `62${cleaned.slice(1)}`
+  } else if (cleaned.startsWith("8")) {
+    cleaned = `62${cleaned}`
+  }
+  return cleaned
 }
 
-async function readZawaError(response: Response) {
+async function readResponseError(response: Response) {
   const text = await response.text().catch(() => "")
-
   if (text) {
     return text
   }
-
-  return "Pesan Zawa belum berhasil dikirim."
+  return "Pesan WhatsApp belum berhasil dikirim."
 }
 
 export async function POST(request: Request) {
   try {
-    const body = (await request.json().catch(() => null)) as ZawaMessageRequest | null
+    const body = (await request.json().catch(() => null)) as WhatsAppMessageRequest | null
+    const messageContent = body?.message || body?.text
 
-    if (!body?.idToken || !body.uid || !body.phone || !body.text || body.type !== "text") {
-      return jsonError("Data pesan Zawa belum lengkap.", 400)
+    if (!body?.idToken || !body.uid || !body.phone || !messageContent) {
+      return jsonError("Data pesan WhatsApp belum lengkap.", 400)
     }
 
     const isValidUser = await verifyFirebaseUser(body.idToken, body.uid)
 
     if (!isValidUser) {
-      return jsonError("Sesi login tidak valid untuk mengirim pesan Zawa.", 401)
+      return jsonError("Sesi login tidak valid untuk mengirim pesan WhatsApp.", 401)
     }
 
     const phone = normalizePhoneNumber(body.phone)
 
-    if (!phone) {
+    if (!phone || phone.length < 9) {
       return jsonError("Nomor telepon tujuan belum valid.", 400)
     }
 
+    const directApiKey = process.env.WA_API_KEY?.trim()
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), ZAWA_MESSAGE_TIMEOUT_MS)
+    const timeoutId = setTimeout(() => controller.abort(), WA_MESSAGE_TIMEOUT_MS)
 
-    const response = await fetch(ZAWA_MESSAGE_URL, {
-      method: "POST",
-      signal: controller.signal,
-      headers: {
-        Authorization: `Bearer ${getRequiredZawaApiKey()}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        phone,
-        type: "text",
-        text: body.text,
-      }),
-    }).finally(() => {
-      clearTimeout(timeoutId)
-    })
+    let response: Response
+
+    if (directApiKey) {
+      // Send directly via Baselab WA Gateway
+      const baseUrl = (process.env.WA_API_BASE_URL || DEFAULT_WA_BASE_URL).replace(/\/+$/, "")
+      const userBot = process.env.WA_BOT_NAME || DEFAULT_WA_BOT_NAME
+
+      response = await fetch(`${baseUrl}/api/send-message`, {
+        method: "POST",
+        signal: controller.signal,
+        headers: {
+          Authorization: `Bearer ${directApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userBot,
+          phone,
+          message: messageContent,
+        }),
+      }).finally(() => {
+        clearTimeout(timeoutId)
+      })
+    } else {
+      // Fallback via Dashboard WhatsApp Message endpoint
+      const dashboardKey = process.env.ZAWA_MESSAGE_API_KEY?.trim() || ""
+      const dashboardUrl = process.env.DASHBOARD_WA_URL || DASHBOARD_WA_URL
+
+      response = await fetch(dashboardUrl, {
+        method: "POST",
+        signal: controller.signal,
+        headers: {
+          Authorization: `Bearer ${dashboardKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          phone,
+          message: messageContent,
+        }),
+      }).finally(() => {
+        clearTimeout(timeoutId)
+      })
+    }
 
     if (!response.ok) {
-      return jsonError(await readZawaError(response), response.status)
+      return jsonError(await readResponseError(response), response.status)
     }
 
     const data = await response.json().catch(() => ({ ok: true }))
-
     return NextResponse.json(data)
   } catch (error) {
     return jsonError(
-      error instanceof Error ? error.message : "Pesan Zawa belum berhasil dikirim.",
+      error instanceof Error ? error.message : "Pesan WhatsApp belum berhasil dikirim.",
       500,
     )
   }

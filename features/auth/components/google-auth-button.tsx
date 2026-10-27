@@ -9,6 +9,7 @@ import { saveSession, type UserSession } from "@/features/auth/services/firebase
 
 type GoogleAuthButtonProps = {
   className?: string
+  label?: string
   onSuccess: (session: UserSession) => Promise<void> | void
   onError: (message: string) => void
 }
@@ -227,7 +228,7 @@ async function createGoogleSession(auth: FirebaseAuth) {
   return session
 }
 
-export function GoogleAuthButton({ className, onSuccess, onError }: GoogleAuthButtonProps) {
+export function GoogleAuthButton({ className, label = "Masuk dengan Google", onSuccess, onError }: GoogleAuthButtonProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [isReady, setIsReady] = useState(false)
   const authRef = useRef<FirebaseAuth | null>(null)
@@ -293,12 +294,12 @@ export function GoogleAuthButton({ className, onSuccess, onError }: GoogleAuthBu
     <Button
       type="button"
       variant="outline"
-      className={cn("w-full bg-white", className)}
+      className={cn("w-full h-11 bg-white hover:bg-neutral-50/90 border-border text-foreground font-medium transition-all shadow-xs active:scale-[0.99]", className)}
       onClick={handleGoogleLogin}
       disabled={isLoading}
     >
       {isLoading ? <Spinner /> : <GoogleMark />}
-      Masuk dengan Google
+      <span>{label}</span>
     </Button>
   )
 }

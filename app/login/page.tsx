@@ -1,13 +1,17 @@
+import type { Metadata } from "next"
+import { AuthLayout } from "@/features/auth/components/auth-layout"
 import { LoginForm } from "@/features/auth/components/login-form"
-import { Navigation } from "@/components/layout/navigation"
+
+export const metadata: Metadata = {
+  title: "Masuk ke Akun | LKP SlangTech",
+  description:
+    "Masuk ke platform belajar bahasa online LKP SlangTech untuk mengakses materi dan kelas Mandarin, English, Japanese, dan Cantonese.",
+}
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-background p-6 pt-28 md:p-10 md:pt-32">
-      <Navigation />
-      <div className="w-full max-w-sm">
-        <LoginForm />
-      </div>
-    </div>
+    <AuthLayout mode="login">
+      <LoginForm />
+    </AuthLayout>
   )
 }

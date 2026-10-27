@@ -1,13 +1,17 @@
-import { Navigation } from "@/components/layout/navigation"
+import type { Metadata } from "next"
+import { AuthLayout } from "@/features/auth/components/auth-layout"
 import { RegisterForm } from "@/features/auth/components/register-form"
+
+export const metadata: Metadata = {
+  title: "Daftar Akun Baru | LKP SlangTech",
+  description:
+    "Daftar akun LKP SlangTech dan mulai belajar bahasa Mandarin, English, Japanese, dan Cantonese bersama tutor berpengalaman.",
+}
 
 export default function RegisterPage() {
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-background p-6 pt-28 md:p-10 md:pt-32">
-      <Navigation />
-      <div className="w-full max-w-sm">
-        <RegisterForm />
-      </div>
-    </div>
+    <AuthLayout mode="register">
+      <RegisterForm />
+    </AuthLayout>
   )
 }

@@ -24,7 +24,7 @@ const siteUrl = getSiteUrl()
 const logoUrl = "/images/mylogo.webp"
 const absoluteLogoUrl = `${siteUrl}${logoUrl}`
 
-const title = "LKP SlangTech | Tingkatkan Bahasamu Dengan Percaya Diri"
+const title = "LKP SlangTech"
 
 const description =
   "Platform belajar bahasa untuk membangun percaya diri dalam Mandarin, English, Japanese, dan Cantonese."

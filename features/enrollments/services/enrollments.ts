@@ -1520,6 +1520,7 @@ function createRegistrationZawaText(params: {
   ].join("\n")
 }
 
+export const sendRegistrationWhatsAppMessage = sendRegistrationZawaMessage
 export async function sendRegistrationZawaMessage(params: {
   session: UserSession
   profile: UserProfile
@@ -1529,7 +1530,7 @@ export async function sendRegistrationZawaMessage(params: {
   const phone = getZawaPhoneNumber(params.profile)
 
   if (!phone) {
-    throw new Error("Nomor telepon peserta belum tersedia untuk notifikasi Zawa.")
+    throw new Error("Nomor telepon peserta belum tersedia untuk notifikasi WhatsApp.")
   }
 
   const controller = new AbortController()
@@ -1552,7 +1553,44 @@ export async function sendRegistrationZawaMessage(params: {
 
   if (!response.ok) {
     const message = await response.text().catch(() => "")
-    throw new Error(message || "Notifikasi Zawa belum berhasil dikirim.")
+    throw new Error(message || "Notifikasi WhatsApp belum berhasil dikirim.")
+  }
+}
+
+export async function sendAdminRegistrationNotification(params: {
+  session: UserSession
+  profile: UserProfile
+  registrationType: "class" | "event"
+  itemName: string
+  itemPrice: string
+  enrollmentId: string
+}) {
+  const studentPhone = (
+    params.profile.phoneNumber ||
+    `${params.profile.phoneCountryCode || ""}${params.profile.phoneNationalNumber || ""}`
+  ).trim()
+
+  const response = await fetch("/api/whatsapp/notify-admin", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      idToken: params.session.idToken,
+      uid: params.session.uid,
+      registrationType: params.registrationType,
+      itemName: params.itemName,
+      itemPrice: params.itemPrice,
+      enrollmentId: params.enrollmentId,
+      studentName: params.profile.fullName || params.session.displayName || "Siswa Baru",
+      studentEmail: params.profile.email || params.session.email,
+      studentPhone,
+    }),
+  })
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => null)
+    console.warn("Admin WhatsApp notification warning:", data)
   }
 }
 

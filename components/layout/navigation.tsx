@@ -6,7 +6,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { useLenis } from "lenis/react"
-import { LayoutDashboard, LogOut, Menu, X } from "lucide-react"
+import { CalendarClock, GraduationCap, LayoutDashboard, LogOut, Menu, X } from "lucide-react"
 
 import {
   DropdownMenu,
@@ -15,16 +15,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { clearSession, getStoredSession, type UserSession } from "@/features/auth/services/firebase-auth"
+import { clearSession, getStoredSession, getUserProfile, type UserProfile, type UserSession } from "@/features/auth/services/firebase-auth"
 
 export function Navigation() {
   const [scrolled, setScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [session, setSession] = useState<UserSession | null>(null)
+  const [profile, setProfile] = useState<UserProfile | null>(null)
   const router = useRouter()
   const pathname = usePathname()
   const lenis = useLenis()
   const useSolidNav = scrolled || pathname !== "/"
+  const isTeacher = profile?.role === "teacher"
 
   useEffect(() => {
     const handleScroll = () => {
@@ -35,14 +37,20 @@ export function Navigation() {
   }, [])
 
   useEffect(() => {
-    setSession(getStoredSession())
-
-    const handleStorageChange = () => {
-      setSession(getStoredSession())
+    const syncSession = () => {
+      const currentSession = getStoredSession()
+      setSession(currentSession)
+      if (currentSession) {
+        getUserProfile(currentSession).then(setProfile).catch(() => null)
+      } else {
+        setProfile(null)
+      }
     }
 
-    window.addEventListener("storage", handleStorageChange)
-    return () => window.removeEventListener("storage", handleStorageChange)
+    syncSession()
+
+    window.addEventListener("storage", syncSession)
+    return () => window.removeEventListener("storage", syncSession)
   }, [])
 
   const scrollToSection = (id: string) => {
@@ -77,6 +85,7 @@ export function Navigation() {
   const handleLogout = () => {
     clearSession()
     setSession(null)
+    setProfile(null)
     setMobileMenuOpen(false)
     router.push("/login")
   }
@@ -154,15 +163,15 @@ export function Navigation() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground shadow-sm transition hover:bg-brand-green-strong">
-                  <LayoutDashboard className="size-4" />
-                  Dashboard
+                  {isTeacher ? <GraduationCap className="size-4" /> : <LayoutDashboard className="size-4" />}
+                  {isTeacher ? "Portal Guru" : "Dashboard"}
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem asChild>
                   <Link href="/home" className="cursor-pointer">
-                    <LayoutDashboard className="size-4" />
-                    Dashboard
+                    {isTeacher ? <CalendarClock className="size-4" /> : <LayoutDashboard className="size-4" />}
+                    {isTeacher ? "Jadwal Mengajar" : "Dashboard"}
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -271,8 +280,8 @@ export function Navigation() {
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-foreground"
                   >
-                    <LayoutDashboard className="size-4" />
-                    Dashboard
+                    {isTeacher ? <GraduationCap className="size-4" /> : <LayoutDashboard className="size-4" />}
+                    {isTeacher ? "Portal Guru (Jadwal)" : "Dashboard"}
                   </Link>
                   <button
                     type="button"

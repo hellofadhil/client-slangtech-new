@@ -36,6 +36,7 @@ import {
   getExistingActiveClassEnrollment,
   manualPaymentAccount,
   saveClassEnrollment,
+  sendAdminRegistrationNotification,
   sendClassRegistrationEmail,
   sendRegistrationZawaMessage,
   uploadPaymentProof,
@@ -268,13 +269,24 @@ export function ClassRegistrationForm({ classItem }: ClassRegistrationFormProps)
         console.warn("Class registration email failed:", emailError)
       })
 
+      await sendAdminRegistrationNotification({
+        session,
+        profile,
+        registrationType: "class",
+        itemName: className,
+        itemPrice: classPrice,
+        enrollmentId,
+      }).catch((adminWaError) => {
+        console.warn("Admin WhatsApp notification failed:", adminWaError)
+      })
+
       await sendRegistrationZawaMessage({
         session,
         profile,
         registrationType: "class",
         itemName: className,
       }).catch((zawaError) => {
-        console.warn("Class registration Zawa message failed:", zawaError)
+        console.warn("Class registration WhatsApp message failed:", zawaError)
       })
 
       setSubmittedEnrollmentId(enrollmentId)

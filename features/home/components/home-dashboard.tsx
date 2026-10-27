@@ -22,6 +22,7 @@ import {
   FileUp,
   Home as HomeIcon,
   MapPin,
+  MessageSquare,
   RefreshCcw,
   RotateCcw,
   Ticket,
@@ -82,33 +83,33 @@ type DashboardEnrollment = ClassEnrollment | EventEnrollment
 
 const ENROLLMENT_ACTIVE_TAB_REFRESH_THROTTLE_MS = 2_000
 
-const dashboardNavItems = [
+const studentNavItems = [
   {
-    id: "home",
+    id: "home" as const,
     label: "Home",
     description: "Dashboard",
     icon: HomeIcon,
   },
   {
-    id: "payments",
+    id: "payments" as const,
     label: "Payment",
     description: "Status pembayaran",
     icon: Wallet,
   },
   {
-    id: "classes",
+    id: "classes" as const,
     label: "Class",
     description: "Kelas aktif",
     icon: BookOpen,
   },
   {
-    id: "events",
+    id: "events" as const,
     label: "Event",
     description: "Event saya",
     icon: CalendarClock,
   },
   {
-    id: "profile",
+    id: "profile" as const,
     label: "Profile",
     description: "Akun learner",
     icon: UserRound,
@@ -119,6 +120,36 @@ const dashboardNavItems = [
   description: string
   icon: typeof HomeIcon
 }>
+
+const teacherNavItems = [
+  {
+    id: "home" as const,
+    label: "Overview",
+    description: "Jadwal Terdekat",
+    icon: HomeIcon,
+  },
+  {
+    id: "classes" as const,
+    label: "Jadwal Mengajar",
+    description: "Jadwal dari Admin",
+    icon: CalendarClock,
+  },
+  {
+    id: "profile" as const,
+    label: "Profil Guru",
+    description: "Informasi pengajar",
+    icon: UserRound,
+  },
+] as const satisfies ReadonlyArray<{
+  id: DashboardView
+  label: string
+  description: string
+  icon: typeof HomeIcon
+}>
+
+function getNavItems(isTeacher?: boolean) {
+  return isTeacher ? teacherNavItems : studentNavItems
+}
 
 const enrollmentStatusMeta: Record<
   EnrollmentStatus,
@@ -448,20 +479,34 @@ function DashboardRefreshButton({
 function EmptyDashboard({ isTeacher }: { isTeacher?: boolean } = {}) {
   if (isTeacher) {
     return (
-      <section className="relative overflow-hidden rounded-xl border border-border bg-white p-6 shadow-sm">
-        <div className="absolute inset-x-0 top-0 h-1 bg-primary" />
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+      <section className="relative overflow-hidden rounded-2xl border border-border bg-white p-6 sm:p-8 shadow-sm">
+        <div className="absolute inset-x-0 top-0 h-1.5 bg-primary" />
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-4">
             <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-brand-mint text-primary shadow-xs">
               <CalendarClock className="size-6" />
             </div>
-            <div>
-              <h2 className="text-xl font-black tracking-normal text-foreground">
-                Selamat Datang di Portal Pengajar SlangTech
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-brand-mint border border-primary/20 px-2.5 py-0.5 text-xs font-bold text-primary">
+                Portal Pengajar Resmi
+              </div>
+              <h2 className="text-xl font-black tracking-normal text-foreground sm:text-2xl">
+                Belum Ada Jadwal Mengajar yang Ditugaskan
               </h2>
-              <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-                Akun guru kamu aktif. Kamu dapat memantau jadwal kelas dan memperbarui profil melalui menu di samping.
+              <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                Jadwal sesi mengajar Anda diatur dan diberikan langsung oleh Admin LKP SlangTech. Begitu admin menetapkan jadwal kelas untuk Anda, detail pertemuan dan link kelas online akan otomatis muncul di sini.
               </p>
+              <div className="pt-2">
+                <a
+                  href="https://api.whatsapp.com/send/?phone=6282122210770&text=Halo%20Admin%20SlangTech,%20saya%20guru%20SlangTech%20ingin%20koordinasi%20mengenai%20jadwal%20mengajar."
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#25D366] px-4 text-xs sm:text-sm font-semibold text-white shadow-xs hover:bg-[#20bd5a] transition-colors"
+                >
+                  <MessageSquare className="size-4" />
+                  Hubungi Admin via WhatsApp
+                </a>
+              </div>
             </div>
           </div>
         </div>
@@ -665,7 +710,7 @@ function SessionCountdown({ startsAt, endsAt }: { startsAt: string; endsAt: stri
   )
 }
 
-function NextSchedulePanel({ enrollment }: { enrollment: ClassEnrollment }) {
+function NextSchedulePanel({ enrollment, isTeacher }: { enrollment: ClassEnrollment; isTeacher?: boolean }) {
   const sessions = enrollment.schedule?.sessions ?? []
   const nextSession = getNextSession(sessions)
   const enrollmentMeta = enrollmentStatusMeta[enrollment.status]
@@ -724,9 +769,13 @@ function NextSchedulePanel({ enrollment }: { enrollment: ClassEnrollment }) {
               </p>
             </div>
             <div className="rounded-lg border border-border/60 bg-brand-surface/60 p-3.5">
-              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Tutor</p>
-              <p className="mt-1 text-base font-black text-foreground">
-                {nextSession.teacherName || "Teacher LKP SlangTech"}
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                {isTeacher ? "Peserta / Siswa" : "Tutor"}
+              </p>
+              <p className="mt-1 text-base font-black text-foreground truncate">
+                {isTeacher
+                  ? (enrollment.studentSnapshot?.fullName || "Siswa SlangTech")
+                  : (nextSession.teacherName || "Teacher LKP SlangTech")}
               </p>
             </div>
           </div>
@@ -768,6 +817,16 @@ function NextSchedulePanel({ enrollment }: { enrollment: ClassEnrollment }) {
             )}
           </div>
         </div>
+      ) : isTeacher ? (
+        <div className="mt-6 flex items-start gap-3 rounded-lg border border-primary/20 bg-brand-mint/40 p-4 text-primary">
+          <CalendarClock className="mt-0.5 size-5 shrink-0" />
+          <div>
+            <p className="text-sm font-bold">Jadwal Sesi Sedang Disusun oleh Admin</p>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              Admin LKP SlangTech sedang memproses penetapan tanggal dan link kelas untuk program ini.
+            </p>
+          </div>
+        </div>
       ) : (
         <div className="mt-6 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-800">
           <AlertCircle className="mt-0.5 size-5 shrink-0" />
@@ -787,14 +846,14 @@ function NextSchedulePanel({ enrollment }: { enrollment: ClassEnrollment }) {
   )
 }
 
-function ScheduleList({ enrollment }: { enrollment: ClassEnrollment }) {
+function ScheduleList({ enrollment, isTeacher }: { enrollment: ClassEnrollment; isTeacher?: boolean }) {
   const sessions = enrollment.schedule?.sessions ?? []
 
   return (
     <section className="rounded-lg border border-border bg-white p-5 shadow-sm sm:p-6">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-black tracking-normal text-foreground">Daftar Jadwal</h2>
+          <h2 className="text-lg font-black tracking-normal text-foreground">{isTeacher ? "Daftar Jadwal Mengajar" : "Daftar Jadwal"}</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             {sessions.length} dari {enrollment.classSnapshot.totalSessions || sessions.length} sesi
           </p>
@@ -841,15 +900,69 @@ function ScheduleList({ enrollment }: { enrollment: ClassEnrollment }) {
                   {" - "}
                   {formatScheduleTime(session.endsAt, session.timezone)}
                 </p>
-                <p className="mt-1">{session.teacherName || "Teacher LKP SlangTech"}</p>
+                <p className="mt-1">{isTeacher ? (enrollment.studentSnapshot?.fullName ? `Siswa: ${enrollment.studentSnapshot.fullName}` : "Peserta SlangTech") : (session.teacherName || "Teacher LKP SlangTech")}</p>
               </div>
             </div>
           ))
         ) : (
           <div className="rounded-lg border border-dashed border-border bg-brand-surface p-5 text-sm leading-7 text-muted-foreground">
-            Jadwal belum tersedia.
+            {isTeacher
+              ? "Jadwal sesi mengajar belum tersedia. Admin akan menetapkan jadwal untuk kelas ini."
+              : "Jadwal belum tersedia."}
           </div>
         )}
+      </div>
+    </section>
+  )
+}
+
+function TeacherScheduleCoordinationPanel({
+  enrollment,
+  profile,
+}: {
+  enrollment: ClassEnrollment
+  profile: UserProfile | null
+}) {
+  const teacherName = profile?.fullName || profile?.nickname || "Pengajar"
+  const className = enrollment.classSnapshot?.displayName || "Kelas Bahasa"
+
+  return (
+    <section className="rounded-lg border border-border bg-white p-5 sm:p-6 shadow-sm space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-black tracking-normal text-foreground">
+            Koordinasi Jadwal Mengajar
+          </h2>
+          <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
+            Jadwal kelas diberikan & dikelola oleh Admin
+          </p>
+        </div>
+        <div className="flex size-9 items-center justify-center rounded-lg bg-brand-mint text-primary">
+          <CalendarClock className="size-5" />
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-border/80 bg-brand-surface p-4 text-xs sm:text-sm text-muted-foreground space-y-2.5">
+        <p className="font-bold text-foreground">Ketentuan Jadwal Pengajar:</p>
+        <ul className="list-disc pl-4 space-y-1.5 leading-relaxed text-xs">
+          <li>Seluruh jadwal sesi dan link meeting kelas diberikan langsung oleh Admin LKP SlangTech.</li>
+          <li>Pengajar tidak dapat mengajukan reschedule sepihak tanpa koordinasi admin.</li>
+          <li>Jika berhalangan hadir atau ada kendala teknis, mohon segera hubungi admin minimal 24 jam sebelum sesi berlangsung.</li>
+        </ul>
+      </div>
+
+      <div className="pt-2">
+        <a
+          href={`https://api.whatsapp.com/send/?phone=6282122210770&text=${encodeURIComponent(
+            `Halo Admin SlangTech, saya ${teacherName} ingin koordinasi terkait jadwal mengajar kelas ${className}.`
+          )}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#25D366] px-4 text-xs sm:text-sm font-semibold text-white shadow-xs hover:bg-[#20bd5a] transition-colors"
+        >
+          <MessageSquare className="size-4" />
+          Hubungi Admin via WhatsApp
+        </a>
       </div>
     </section>
   )
@@ -1151,24 +1264,20 @@ function DashboardSidebarNav({
   onChange,
   profile,
   session,
+  isTeacher,
 }: {
   activeView: DashboardView
   onChange: (view: DashboardView) => void
   profile: UserProfile | null
   session: UserSession | null
+  isTeacher?: boolean
 }) {
+  const navItems = getNavItems(isTeacher)
   return (
     <aside className="hidden lg:block">
       <div className="sticky top-28 space-y-4 rounded-lg border border-border bg-white p-4 shadow-sm">
-        <div className="rounded-lg bg-brand-surface p-4">
-          <p className="text-sm font-black text-foreground">
-            {profile?.fullName || session?.displayName || "Learner"}
-          </p>
-          <p className="mt-1 truncate text-sm text-muted-foreground">{profile?.email || session?.email}</p>
-        </div>
-
         <nav aria-label="Dashboard navigation" className="grid gap-1">
-          {dashboardNavItems.map((item) => {
+          {navItems.map((item) => {
             const Icon = item.icon
             const isActive = item.id === activeView
 
@@ -1208,17 +1317,20 @@ function DashboardSidebarNav({
 function DashboardBottomNav({
   activeView,
   onChange,
+  isTeacher,
 }: {
   activeView: DashboardView
   onChange: (view: DashboardView) => void
+  isTeacher?: boolean
 }) {
+  const navItems = getNavItems(isTeacher)
   return (
     <nav
       aria-label="Dashboard navigation"
       className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[calc(env(safe-area-inset-bottom)+0.6rem)] pt-2 pointer-events-none lg:hidden"
     >
       <div className="mx-auto flex w-full max-w-md items-center justify-between rounded-2xl border border-white/80 bg-white/90 p-1.5 shadow-[0_12px_40px_rgba(7,95,56,0.12)] backdrop-blur-xl pointer-events-auto">
-        {dashboardNavItems.map((item) => {
+        {navItems.map((item) => {
           const Icon = item.icon
           const isActive = item.id === activeView
 
@@ -1266,6 +1378,7 @@ function DashboardHomeView({
   enrollments,
   profile,
   session,
+  isTeacher,
   onOpenClasses,
   refreshButton,
 }: {
@@ -1273,6 +1386,7 @@ function DashboardHomeView({
   enrollments: ClassEnrollment[]
   profile: UserProfile | null
   session: UserSession | null
+  isTeacher?: boolean
   onOpenClasses: () => void
   refreshButton: ReactNode
 }) {
@@ -1280,19 +1394,26 @@ function DashboardHomeView({
   const nextSession = selectedEnrollment
     ? getNextSession(selectedEnrollment.schedule?.sessions ?? [])
     : null
-  const nextSessionSummary = nextSession
-    ? `${nextSession.title || `Sesi ${nextSession.sessionNumber}`} - ${formatScheduleDay(
-        nextSession.startsAt,
-        nextSession.timezone,
-      )}, ${formatScheduleTime(nextSession.startsAt, nextSession.timezone)}`
-    : "Jadwal kelas kamu akan muncul di sini begitu admin mengatur sesi."
+  const nextSessionSummary = isTeacher
+    ? (nextSession
+        ? `Jadwal mengajar berikutnya: ${nextSession.title || `Sesi ${nextSession.sessionNumber}`} - ${formatScheduleDay(
+            nextSession.startsAt,
+            nextSession.timezone,
+          )}, ${formatScheduleTime(nextSession.startsAt, nextSession.timezone)}`
+        : "Jadwal sesi mengajar akan muncul di sini setelah diberikan oleh Admin LKP SlangTech.")
+    : (nextSession
+        ? `${nextSession.title || `Sesi ${nextSession.sessionNumber}`} - ${formatScheduleDay(
+            nextSession.startsAt,
+            nextSession.timezone,
+          )}, ${formatScheduleTime(nextSession.startsAt, nextSession.timezone)}`
+        : "Jadwal kelas kamu akan muncul di sini begitu admin mengatur sesi.")
 
   return (
     <div className="space-y-5">
       <header className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-2xl font-black tracking-normal text-foreground sm:text-3xl">
-            Halo, {getFirstName(profile, session)}
+            Halo, {isTeacher ? `Guru ${getFirstName(profile, session)}` : getFirstName(profile, session)}
           </h1>
           <p className="mt-2 text-sm font-medium leading-6 text-muted-foreground">
             {nextSessionSummary}
@@ -1301,28 +1422,29 @@ function DashboardHomeView({
         <div className="flex shrink-0 items-center gap-2">
           {refreshButton}
           <Button type="button" variant="outline" onClick={onOpenClasses} className="hidden sm:inline-flex">
-            Kelas Saya
+            {isTeacher ? "Jadwal Mengajar" : "Kelas Saya"}
             <ArrowRight className="size-4" />
           </Button>
         </div>
       </header>
 
       {selectedEnrollment ? (
-        <NextSchedulePanel enrollment={selectedEnrollment} />
+        <NextSchedulePanel enrollment={selectedEnrollment} isTeacher={isTeacher} />
       ) : (
-        <EmptyDashboard isTeacher={profile?.role === "teacher"} />
+        <EmptyDashboard isTeacher={isTeacher} />
       )}
 
       {selectedEnrollment && (
         <section className="rounded-lg border border-border bg-white p-5 shadow-sm">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-sm font-bold text-muted-foreground">Kelas Saya</p>
+              <p className="text-sm font-bold text-muted-foreground">{isTeacher ? "Jadwal Mengajar" : "Kelas Saya"}</p>
               <h2 className="mt-2 text-2xl font-black tracking-normal text-foreground">
-                {activeClassCount} Kelas Aktif
+                {activeClassCount} {isTeacher ? "Kelas Terjadwal" : "Kelas Aktif"}
               </h2>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                {selectedEnrollment.classSnapshot.displayName}
+                Program: <strong className="text-foreground">{selectedEnrollment.classSnapshot.displayName}</strong>
+                {isTeacher && selectedEnrollment.studentSnapshot?.fullName ? ` • Siswa: ${selectedEnrollment.studentSnapshot.fullName}` : ""}
               </p>
             </div>
             <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-brand-surface text-foreground">
@@ -1330,7 +1452,7 @@ function DashboardHomeView({
             </div>
           </div>
           <Button type="button" variant="outline" onClick={onOpenClasses} className="mt-6 h-11 w-full">
-            Lihat Detail Kelas
+            {isTeacher ? "Lihat Seluruh Jadwal Mengajar" : "Lihat Detail Kelas"}
             <ArrowRight className="size-4" />
           </Button>
         </section>
@@ -1425,12 +1547,14 @@ function PaymentsView({
 function ClassListView({
   enrollments,
   onOpenDetail,
+  isTeacher,
 }: {
   enrollments: ClassEnrollment[]
   onOpenDetail: (enrollmentId: string) => void
+  isTeacher?: boolean
 }) {
   if (enrollments.length === 0) {
-    return <EmptyDashboard />
+    return <EmptyDashboard isTeacher={isTeacher} />
   }
 
   return (
@@ -1482,7 +1606,7 @@ function ClassListView({
             </div>
 
             <Button type="button" onClick={() => onOpenDetail(enrollment.id)} className="mt-5 h-11 w-full">
-              Detail Kelas
+              {isTeacher ? "Lihat Jadwal Sesi" : "Detail Kelas"}
               <ArrowRight className="size-4" />
             </Button>
           </section>
@@ -1496,6 +1620,8 @@ function ClassesView({
   enrollments,
   detailEnrollment,
   session,
+  isTeacher,
+  profile,
   onOpenDetail,
   onBackToList,
   onSubmitted,
@@ -1504,6 +1630,8 @@ function ClassesView({
   enrollments: ClassEnrollment[]
   detailEnrollment: ClassEnrollment | null
   session: UserSession | null
+  isTeacher?: boolean
+  profile?: UserProfile | null
   onOpenDetail: (enrollmentId: string) => void
   onBackToList: () => void
   onSubmitted: () => Promise<void>
@@ -1523,7 +1651,7 @@ function ClassesView({
           </div>
           {refreshButton}
         </header>
-        <ClassListView enrollments={enrollments} onOpenDetail={onOpenDetail} />
+        <ClassListView enrollments={enrollments} onOpenDetail={onOpenDetail} isTeacher={isTeacher} />
       </div>
     )
   }
@@ -1537,14 +1665,18 @@ function ClassesView({
         </Button>
         {refreshButton}
       </div>
-      <NextSchedulePanel enrollment={detailEnrollment} />
+      <NextSchedulePanel enrollment={detailEnrollment} isTeacher={isTeacher} />
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">
-        <ScheduleList enrollment={detailEnrollment} />
-        <ReschedulePanel
-          enrollment={detailEnrollment}
-          session={session}
-          onSubmitted={onSubmitted}
-        />
+        <ScheduleList enrollment={detailEnrollment} isTeacher={isTeacher} />
+        {isTeacher ? (
+          <TeacherScheduleCoordinationPanel enrollment={detailEnrollment} profile={profile ?? null} />
+        ) : (
+          <ReschedulePanel
+            enrollment={detailEnrollment}
+            session={session}
+            onSubmitted={onSubmitted}
+          />
+        )}
       </div>
     </div>
   )
@@ -2288,6 +2420,7 @@ export function HomeDashboard() {
   const [selectedClassDetailId, setSelectedClassDetailId] = useState("")
   const [selectedEventDetailId, setSelectedEventDetailId] = useState("")
   const [activeView, setActiveView] = useState<DashboardView>("home")
+  const isTeacher = profile?.role === "teacher"
   const [errorMessage, setErrorMessage] = useState("")
   const [isRefreshing, setIsRefreshing] = useState(false)
   const refreshInFlightRef = useRef(false)
@@ -2323,7 +2456,7 @@ export function HomeDashboard() {
     const { classEnrollments, eventEnrollments } = await getUserEnrollmentOverview(activeSession)
 
     setEnrollments(classEnrollments)
-    setEventEnrollments(eventEnrollments)
+    setEventEnrollments(isTeacher ? [] : eventEnrollments)
     setSelectedEventDetailId((currentId) => {
       if (currentId && eventEnrollments.some((enrollment) => enrollment.id === currentId)) {
         return currentId
@@ -2338,7 +2471,7 @@ export function HomeDashboard() {
 
       return classEnrollments[0]?.id ?? ""
     })
-  }, [])
+  }, [isTeacher])
 
   const refreshEnrollments = useCallback(
     async ({
@@ -2454,6 +2587,12 @@ export function HomeDashboard() {
     }
   }, [guardState, refreshEnrollments, session])
 
+  useEffect(() => {
+    if (isTeacher && (activeView === "payments" || activeView === "events")) {
+      setActiveView("home")
+    }
+  }, [isTeacher, activeView])
+
   const handleRefresh = async () => {
     if (!session) {
       return
@@ -2470,6 +2609,13 @@ export function HomeDashboard() {
   }
 
   const handleChangeView = (view: DashboardView) => {
+    // Teacher guard: Teacher has no payments and no events
+    if (isTeacher && (view === "payments" || view === "events")) {
+      setActiveView("home")
+      scrollDashboardToTop()
+      return
+    }
+
     setActiveView(view)
     scrollDashboardToTop()
 
@@ -2601,6 +2747,7 @@ export function HomeDashboard() {
           onChange={handleChangeView}
           profile={profile}
           session={session}
+          isTeacher={isTeacher}
         />
 
         <main className="min-w-0 space-y-6">
@@ -2616,12 +2763,13 @@ export function HomeDashboard() {
               enrollments={enrollments}
               profile={profile}
               session={session}
+              isTeacher={isTeacher}
               onOpenClasses={() => handleChangeView("classes")}
               refreshButton={refreshButton}
             />
           )}
 
-          {activeView === "payments" && (
+          {activeView === "payments" && !isTeacher && (
             <PaymentsView enrollments={paymentEnrollments} refreshButton={refreshButton} />
           )}
 
@@ -2630,6 +2778,8 @@ export function HomeDashboard() {
               enrollments={activeClassEnrollments}
               detailEnrollment={detailEnrollment}
               session={session}
+              isTeacher={isTeacher}
+              profile={profile}
               onOpenDetail={handleOpenClassDetail}
               onBackToList={handleBackToClassList}
               onSubmitted={handleRefresh}
@@ -2637,7 +2787,7 @@ export function HomeDashboard() {
             />
           )}
 
-          {activeView === "events" && (
+          {activeView === "events" && !isTeacher && (
             <EventsView
               enrollments={eventEnrollments}
               detailEnrollment={detailEventEnrollment}
@@ -2663,7 +2813,7 @@ export function HomeDashboard() {
         </main>
       </div>
 
-      <DashboardBottomNav activeView={activeView} onChange={handleChangeView} />
+      <DashboardBottomNav activeView={activeView} onChange={handleChangeView} isTeacher={isTeacher} />
     </div>
   )
 }
