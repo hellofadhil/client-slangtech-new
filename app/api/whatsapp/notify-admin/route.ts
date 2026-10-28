@@ -128,7 +128,7 @@ export async function POST(request: Request) {
         clearTimeout(timeoutId)
       })
     } else {
-      const dashboardKey = process.env.ZAWA_MESSAGE_API_KEY?.trim() || ""
+      const dashboardKey = process.env.WA_API_KEY?.trim() || waConfig.apiKey || ""
       const dashboardUrl = process.env.DASHBOARD_WA_URL || DASHBOARD_WA_URL
 
       response = await fetch(dashboardUrl, {

@@ -291,8 +291,8 @@ type FirestoreRunQueryRow = {
 
 const ENROLLMENTS_COLLECTION = "enrollments"
 const PAYMENT_UPLOAD_URL = "/api/upload-payment"
-const ZAWA_MESSAGE_URL = "/api/zawa/message"
-const ZAWA_MESSAGE_TIMEOUT_MS = 8000
+const WA_MESSAGE_URL = "/api/whatsapp/message"
+const WA_MESSAGE_TIMEOUT_MS = 8000
 const DEFAULT_TIMEZONE = "Asia/Jakarta"
 
 export const manualPaymentAccount = {
@@ -1492,7 +1492,7 @@ function formatClassEmailSessionInfo(classItem: Class) {
   return `${totalSessions}, ${duration}`
 }
 
-function getZawaPhoneNumber(profile: UserProfile) {
+function getWhatsAppPhoneNumber(profile: UserProfile) {
   const digits = (profile.phoneNumber || `${profile.phoneCountryCode}${profile.phoneNationalNumber}`).replace(
     /[^\d]/g,
     "",
@@ -1501,7 +1501,7 @@ function getZawaPhoneNumber(profile: UserProfile) {
   return digits.replace(/^0+/, "")
 }
 
-function createRegistrationZawaText(params: {
+function createRegistrationWhatsAppText(params: {
   profile: UserProfile
   registrationType: "class" | "event"
   itemName: string
@@ -1520,23 +1520,22 @@ function createRegistrationZawaText(params: {
   ].join("\n")
 }
 
-export const sendRegistrationWhatsAppMessage = sendRegistrationZawaMessage
-export async function sendRegistrationZawaMessage(params: {
+export async function sendRegistrationWhatsAppMessage(params: {
   session: UserSession
   profile: UserProfile
   registrationType: "class" | "event"
   itemName: string
 }) {
-  const phone = getZawaPhoneNumber(params.profile)
+  const phone = getWhatsAppPhoneNumber(params.profile)
 
   if (!phone) {
     throw new Error("Nomor telepon peserta belum tersedia untuk notifikasi WhatsApp.")
   }
 
   const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), ZAWA_MESSAGE_TIMEOUT_MS)
+  const timeoutId = setTimeout(() => controller.abort(), WA_MESSAGE_TIMEOUT_MS)
 
-  const response = await fetch(ZAWA_MESSAGE_URL, {
+  const response = await fetch(WA_MESSAGE_URL, {
     method: "POST",
     signal: controller.signal,
     headers: { "Content-Type": "application/json" },
@@ -1545,7 +1544,7 @@ export async function sendRegistrationZawaMessage(params: {
       uid: params.session.uid,
       phone,
       type: "text",
-      text: createRegistrationZawaText(params),
+      text: createRegistrationWhatsAppText(params),
     }),
   }).finally(() => {
     clearTimeout(timeoutId)

@@ -47,8 +47,7 @@ client/
 │   │   ├── event-registration-email/
 │   │   ├── regions/              # API Wilayah Indonesia
 │   │   ├── upload-payment/       # Upload bukti bayar ke Cloudflare R2
-│   │   ├── whatsapp/             # Gateway notifikasi admin
-│   │   └── zawa/                 # Layanan pesan WhatsApp siswa
+│   │   └── whatsapp/             # Gateway notifikasi WhatsApp (Admin & Siswa)
 │   ├── classes/                  # Halaman daftar dan detail kelas
 │   ├── events/                   # Halaman daftar dan detail event
 │   ├── home/                     # Halaman landing/beranda

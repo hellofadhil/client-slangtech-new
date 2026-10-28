@@ -37,7 +37,7 @@ import {
   saveEventEnrollment,
   sendAdminRegistrationNotification,
   sendEventRegistrationEmail,
-  sendRegistrationZawaMessage,
+  sendRegistrationWhatsAppMessage,
   uploadEventPaymentProof,
   type EventEnrollment,
   type EventEnrollmentPayment,
@@ -270,13 +270,13 @@ export function EventRegistrationForm({ eventItem }: EventRegistrationFormProps)
         console.warn("Admin WhatsApp notification failed:", adminWaError)
       })
 
-      await sendRegistrationZawaMessage({
+      await sendRegistrationWhatsAppMessage({
         session,
         profile,
         registrationType: "event",
         itemName: eventName,
-      }).catch((zawaError) => {
-        console.warn("Event registration WhatsApp message failed:", zawaError)
+      }).catch((waError) => {
+        console.warn("Event registration WhatsApp message failed:", waError)
       })
 
       setSubmittedEnrollmentId(enrollmentId)
