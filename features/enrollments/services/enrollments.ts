@@ -1563,7 +1563,7 @@ export async function sendAdminRegistrationNotification(params: {
   registrationType: "class" | "event"
   itemName: string
   itemPrice: string
-  enrollmentId: string
+  enrollmentId?: string
 }) {
   const studentPhone = (
     params.profile.phoneNumber ||

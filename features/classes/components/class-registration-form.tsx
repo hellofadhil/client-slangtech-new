@@ -38,7 +38,6 @@ import {
   saveClassEnrollment,
   sendAdminRegistrationNotification,
   sendClassRegistrationEmail,
-  sendRegistrationZawaMessage,
   uploadPaymentProof,
   type ClassEnrollment,
   type PaymentMethod,
@@ -115,6 +114,7 @@ export function ClassRegistrationForm({ classItem }: ClassRegistrationFormProps)
   const className = getLocalizedClassName(classItem)
   const classImage = getClassImage(classItem)
   const selectedPrice = useMemo(() => getSelectedClassPrice(classItem), [classItem])
+  const classPrice = formatPrice(selectedPrice)
   const hasDiscount =
     typeof classItem.discountPrice === "number" && classItem.discountPrice < classItem.price
 
@@ -275,18 +275,8 @@ export function ClassRegistrationForm({ classItem }: ClassRegistrationFormProps)
         registrationType: "class",
         itemName: className,
         itemPrice: classPrice,
-        enrollmentId,
       }).catch((adminWaError) => {
         console.warn("Admin WhatsApp notification failed:", adminWaError)
-      })
-
-      await sendRegistrationZawaMessage({
-        session,
-        profile,
-        registrationType: "class",
-        itemName: className,
-      }).catch((zawaError) => {
-        console.warn("Class registration WhatsApp message failed:", zawaError)
       })
 
       setSubmittedEnrollmentId(enrollmentId)

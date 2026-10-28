@@ -266,7 +266,6 @@ export function EventRegistrationForm({ eventItem }: EventRegistrationFormProps)
         registrationType: "event",
         itemName: eventName,
         itemPrice: formatEventPrice(eventItem),
-        enrollmentId,
       }).catch((adminWaError) => {
         console.warn("Admin WhatsApp notification failed:", adminWaError)
       })

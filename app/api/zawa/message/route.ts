@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server"
+import { getWhatsAppConfig } from "@/lib/whatsapp"
 
 export const runtime = "nodejs"
 
-const DEFAULT_WA_BASE_URL = "https://api-wa.baselab.web.id"
-const DEFAULT_WA_BOT_NAME = "marketing_bot"
 const DASHBOARD_WA_URL = "https://manage.slangtech.asia/api/whatsapp/message"
 const WA_MESSAGE_TIMEOUT_MS = 10000
 
@@ -98,26 +97,23 @@ export async function POST(request: Request) {
       return jsonError("Nomor telepon tujuan belum valid.", 400)
     }
 
-    const directApiKey = process.env.WA_API_KEY?.trim()
+    const waConfig = await getWhatsAppConfig()
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), WA_MESSAGE_TIMEOUT_MS)
 
     let response: Response
 
-    if (directApiKey) {
+    if (waConfig.apiKey) {
       // Send directly via Baselab WA Gateway
-      const baseUrl = (process.env.WA_API_BASE_URL || DEFAULT_WA_BASE_URL).replace(/\/+$/, "")
-      const userBot = process.env.WA_BOT_NAME || DEFAULT_WA_BOT_NAME
-
-      response = await fetch(`${baseUrl}/api/send-message`, {
+      response = await fetch(`${waConfig.baseUrl}/api/send-message`, {
         method: "POST",
         signal: controller.signal,
         headers: {
-          Authorization: `Bearer ${directApiKey}`,
+          Authorization: `Bearer ${waConfig.apiKey}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          userBot,
+          userBot: waConfig.userBot,
           phone,
           message: messageContent,
         }),

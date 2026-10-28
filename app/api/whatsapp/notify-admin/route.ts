@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server"
+import { getWhatsAppConfig } from "@/lib/whatsapp"
 
 export const runtime = "nodejs"
 
-const DEFAULT_WA_BASE_URL = "https://api-wa.baselab.web.id"
-const DEFAULT_WA_BOT_NAME = "marketing_bot"
-const DEFAULT_ADMIN_PHONE = "6289514563365"
 const DASHBOARD_WA_URL = "https://manage.slangtech.asia/api/whatsapp/message"
 const WA_TIMEOUT_MS = 10000
 
@@ -86,21 +84,20 @@ export async function POST(request: Request) {
       return jsonError("Sesi login tidak valid.", 401)
     }
 
-    const adminPhone = normalizePhoneNumber(process.env.WA_ADMIN_PHONE || DEFAULT_ADMIN_PHONE)
+    const waConfig = await getWhatsAppConfig()
+    const adminPhone = normalizePhoneNumber(waConfig.adminPhone)
     const typeLabel = body.registrationType === "event" ? "Event" : "Kelas"
     const studentName = body.studentName || "Siswa Baru"
     const studentEmail = body.studentEmail || "-"
     const studentPhone = body.studentPhone || "-"
     const itemName = body.itemName
     const itemPrice = body.itemPrice || "-"
-    const enrollmentId = body.enrollmentId || "-"
 
     const message = [
       `Pendaftaran ${typeLabel} Baru Masuk`,
       "",
       `Program: ${itemName}`,
       `Biaya: ${itemPrice}`,
-      `ID Pendaftaran: ${enrollmentId}`,
       "",
       `Nama Siswa: ${studentName}`,
       `Email: ${studentEmail}`,
@@ -109,25 +106,21 @@ export async function POST(request: Request) {
       "Bukti pembayaran telah diunggah. Silakan verifikasi di dashboard admin.",
     ].join("\n")
 
-    const directApiKey = process.env.WA_API_KEY?.trim()
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), WA_TIMEOUT_MS)
 
     let response: Response
 
-    if (directApiKey) {
-      const baseUrl = (process.env.WA_API_BASE_URL || DEFAULT_WA_BASE_URL).replace(/\/+$/, "")
-      const userBot = process.env.WA_BOT_NAME || DEFAULT_WA_BOT_NAME
-
-      response = await fetch(`${baseUrl}/api/send-message`, {
+    if (waConfig.apiKey) {
+      response = await fetch(`${waConfig.baseUrl}/api/send-message`, {
         method: "POST",
         signal: controller.signal,
         headers: {
-          Authorization: `Bearer ${directApiKey}`,
+          Authorization: `Bearer ${waConfig.apiKey}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          userBot,
+          userBot: waConfig.userBot,
           phone: adminPhone,
           message,
         }),
