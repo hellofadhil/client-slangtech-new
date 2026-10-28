@@ -1,3 +1,5 @@
+![LKP SlangTech Client Portal](./public/image.png)
+
 # LKP SlangTech - Client Portal (Web Siswa)
 
 Portal publik dan siswa untuk platform kursus dan pelatihan teknologi **LKP SlangTech**. Aplikasi ini menangani eksplorasi katalog kelas/event, pendaftaran program, upload bukti pembayaran, profil siswa, serta notifikasi terintegrasi.
