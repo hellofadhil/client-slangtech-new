@@ -710,9 +710,26 @@ function SessionCountdown({ startsAt, endsAt }: { startsAt: string; endsAt: stri
   )
 }
 
-function NextSchedulePanel({ enrollment, isTeacher }: { enrollment: ClassEnrollment; isTeacher?: boolean }) {
+function NextSchedulePanel({
+  enrollment,
+  isTeacher,
+  profile,
+}: {
+  enrollment: ClassEnrollment
+  isTeacher?: boolean
+  profile?: UserProfile | null
+}) {
   const sessions = enrollment.schedule?.sessions ?? []
-  const nextSession = getNextSession(sessions)
+  const teacherSessions = isTeacher && profile
+    ? sessions.filter(
+        (s) =>
+          (profile.uid && s.teacherId === profile.uid) ||
+          (profile.fullName && s.teacherName?.toLowerCase() === profile.fullName.toLowerCase()) ||
+          (profile.nickname && s.teacherName?.toLowerCase() === profile.nickname.toLowerCase())
+      )
+    : sessions
+  const effectiveSessions = isTeacher && teacherSessions.length > 0 ? teacherSessions : sessions
+  const nextSession = getNextSession(effectiveSessions)
   const enrollmentMeta = enrollmentStatusMeta[enrollment.status]
 
   const calendarUrl = nextSession
@@ -846,8 +863,25 @@ function NextSchedulePanel({ enrollment, isTeacher }: { enrollment: ClassEnrollm
   )
 }
 
-function ScheduleList({ enrollment, isTeacher }: { enrollment: ClassEnrollment; isTeacher?: boolean }) {
-  const sessions = enrollment.schedule?.sessions ?? []
+function ScheduleList({
+  enrollment,
+  isTeacher,
+  profile,
+}: {
+  enrollment: ClassEnrollment
+  isTeacher?: boolean
+  profile?: UserProfile | null
+}) {
+  const allSessions = enrollment.schedule?.sessions ?? []
+  const teacherSessions = isTeacher && profile
+    ? allSessions.filter(
+        (s) =>
+          (profile.uid && s.teacherId === profile.uid) ||
+          (profile.fullName && s.teacherName?.toLowerCase() === profile.fullName.toLowerCase()) ||
+          (profile.nickname && s.teacherName?.toLowerCase() === profile.nickname.toLowerCase())
+      )
+    : allSessions
+  const sessions = isTeacher && teacherSessions.length > 0 ? teacherSessions : allSessions
 
   return (
     <section className="rounded-lg border border-border bg-white p-5 shadow-sm sm:p-6">
@@ -901,6 +935,17 @@ function ScheduleList({ enrollment, isTeacher }: { enrollment: ClassEnrollment; 
                   {formatScheduleTime(session.endsAt, session.timezone)}
                 </p>
                 <p className="mt-1">{isTeacher ? (enrollment.studentSnapshot?.fullName ? `Siswa: ${enrollment.studentSnapshot.fullName}` : "Peserta SlangTech") : (session.teacherName || "Teacher LKP SlangTech")}</p>
+                {session.meetingUrl && (
+                  <a
+                    href={session.meetingUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1.5 inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline"
+                  >
+                    <Video className="size-3" />
+                    Buka Link Kelas
+                  </a>
+                )}
               </div>
             </div>
           ))
@@ -1429,7 +1474,7 @@ function DashboardHomeView({
       </header>
 
       {selectedEnrollment ? (
-        <NextSchedulePanel enrollment={selectedEnrollment} isTeacher={isTeacher} />
+        <NextSchedulePanel enrollment={selectedEnrollment} isTeacher={isTeacher} profile={profile} />
       ) : (
         <EmptyDashboard isTeacher={isTeacher} />
       )}
@@ -1548,10 +1593,12 @@ function ClassListView({
   enrollments,
   onOpenDetail,
   isTeacher,
+  profile,
 }: {
   enrollments: ClassEnrollment[]
   onOpenDetail: (enrollmentId: string) => void
   isTeacher?: boolean
+  profile?: UserProfile | null
 }) {
   if (enrollments.length === 0) {
     return <EmptyDashboard isTeacher={isTeacher} />
@@ -1561,7 +1608,16 @@ function ClassListView({
     <div className="grid gap-4 md:grid-cols-2">
       {enrollments.map((enrollment) => {
         const sessions = enrollment.schedule?.sessions ?? []
-        const nextSession = getNextSession(sessions)
+        const teacherSessions = isTeacher && profile
+          ? sessions.filter(
+              (s) =>
+                (profile.uid && s.teacherId === profile.uid) ||
+                (profile.fullName && s.teacherName?.toLowerCase() === profile.fullName.toLowerCase()) ||
+                (profile.nickname && s.teacherName?.toLowerCase() === profile.nickname.toLowerCase())
+            )
+          : sessions
+        const effectiveSessions = isTeacher && teacherSessions.length > 0 ? teacherSessions : sessions
+        const nextSession = getNextSession(effectiveSessions)
         const enrollmentMeta = enrollmentStatusMeta[enrollment.status]
 
         return (
@@ -1597,7 +1653,10 @@ function ClassListView({
                   </div>
                   <p className="text-sm leading-6 text-muted-foreground">
                     {formatScheduleDay(nextSession.startsAt, nextSession.timezone)}
-                    {nextSession.teacherName ? ` - Tutor: ${nextSession.teacherName}` : ""}
+                    {isTeacher
+                      ? (enrollment.studentSnapshot?.fullName ? ` - Siswa: ${enrollment.studentSnapshot.fullName}` : "")
+                      : (nextSession.teacherName ? ` - Tutor: ${nextSession.teacherName}` : "")
+                    }
                   </p>
                 </>
               ) : (
@@ -1643,15 +1702,17 @@ function ClassesView({
         <header className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h1 className="text-2xl font-black tracking-normal text-foreground sm:text-3xl">
-              Kelas Saya
+              {isTeacher ? "Jadwal Mengajar" : "Kelas Saya"}
             </h1>
             <p className="mt-2 text-sm font-medium leading-6 text-muted-foreground">
-              Kelas aktif dan jadwal belajar kamu.
+              {isTeacher
+                ? "Daftar kelas dan jadwal mengajar yang diberikan oleh Admin."
+                : "Kelas aktif dan jadwal belajar kamu."}
             </p>
           </div>
           {refreshButton}
         </header>
-        <ClassListView enrollments={enrollments} onOpenDetail={onOpenDetail} isTeacher={isTeacher} />
+        <ClassListView enrollments={enrollments} onOpenDetail={onOpenDetail} isTeacher={isTeacher} profile={profile} />
       </div>
     )
   }
@@ -1661,13 +1722,13 @@ function ClassesView({
       <div className="flex items-center justify-between gap-3">
         <Button type="button" variant="outline" onClick={onBackToList} className="w-fit">
           <ChevronLeft className="size-4" />
-          Kembali ke Kelas
+          {isTeacher ? "Kembali ke Jadwal Mengajar" : "Kembali ke Kelas"}
         </Button>
         {refreshButton}
       </div>
-      <NextSchedulePanel enrollment={detailEnrollment} isTeacher={isTeacher} />
+      <NextSchedulePanel enrollment={detailEnrollment} isTeacher={isTeacher} profile={profile} />
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">
-        <ScheduleList enrollment={detailEnrollment} isTeacher={isTeacher} />
+        <ScheduleList enrollment={detailEnrollment} isTeacher={isTeacher} profile={profile} />
         {isTeacher ? (
           <TeacherScheduleCoordinationPanel enrollment={detailEnrollment} profile={profile ?? null} />
         ) : (
@@ -2452,11 +2513,13 @@ export function HomeDashboard() {
     )
   }, [eventEnrollments, selectedEventDetailId])
 
-  const loadEnrollments = useCallback(async (activeSession: UserSession) => {
-    const { classEnrollments, eventEnrollments } = await getUserEnrollmentOverview(activeSession)
+  const loadEnrollments = useCallback(async (activeSession: UserSession, userProfile?: UserProfile | null) => {
+    const effectiveProfile = userProfile ?? profile
+    const isTeacherUser = effectiveProfile?.role === "teacher"
+    const { classEnrollments, eventEnrollments } = await getUserEnrollmentOverview(activeSession, effectiveProfile)
 
     setEnrollments(classEnrollments)
-    setEventEnrollments(isTeacher ? [] : eventEnrollments)
+    setEventEnrollments(isTeacherUser ? [] : eventEnrollments)
     setSelectedEventDetailId((currentId) => {
       if (currentId && eventEnrollments.some((enrollment) => enrollment.id === currentId)) {
         return currentId
@@ -2496,7 +2559,7 @@ export function HomeDashboard() {
         }
 
         setSession(validSession)
-        await loadEnrollments(validSession)
+        await loadEnrollments(validSession, profile)
         setErrorMessage("")
       } catch (error) {
         if (reportError) {
@@ -2537,7 +2600,7 @@ export function HomeDashboard() {
       setActiveView(isProfileComplete(existingProfile) ? "home" : "profile")
 
       try {
-        await loadEnrollments(validSession)
+        await loadEnrollments(validSession, existingProfile)
       } catch (error) {
         setErrorMessage(error instanceof Error ? error.message : "Data kelas dan event belum bisa dimuat.")
       }

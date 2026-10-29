@@ -66,6 +66,7 @@ export type EnrollmentScheduleSession = {
   startsAt: string
   endsAt: string
   timezone: string
+  teacherId?: string
   teacherName: string
   locationType: ScheduleLocationType
   locationLabel: string
@@ -1653,6 +1654,87 @@ export async function sendEventRegistrationEmail(params: {
   }
 }
 
+async function getTeacherEnrollmentDocuments(
+  session: UserSession,
+  profile?: UserProfile | null,
+): Promise<FirestoreDocument[]> {
+  const teacherUid = session.uid
+  const teacherFullName = (profile?.fullName || "").trim().toLowerCase()
+  const teacherNickname = (profile?.nickname || "").trim().toLowerCase()
+
+  const response = await fetch(getEnrollmentsRunQueryUrl(), {
+    method: "POST",
+    cache: "no-store",
+    headers: {
+      Authorization: `Bearer ${session.idToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      structuredQuery: {
+        from: [
+          {
+            collectionId: ENROLLMENTS_COLLECTION,
+          },
+        ],
+        limit: 100,
+      },
+    }),
+  })
+
+  if (!response.ok) {
+    throw new Error(
+      await readFirestoreError(
+        response,
+        "Data jadwal mengajar belum bisa dibaca. Pastikan koneksi internet stabil.",
+      ),
+    )
+  }
+
+  const rows = (await response.json()) as FirestoreRunQueryRow[]
+  const allDocs = rows
+    .map((row) => row.document)
+    .filter((document): document is FirestoreDocument => Boolean(document))
+
+  return allDocs.filter((document) => {
+    const fields = getDocumentFields(document)
+
+    // 1. Check top-level assignedTeacherIds
+    const assignedIds = asArray(fields.assignedTeacherIds).map((v) => asString(v))
+    if (assignedIds.includes(teacherUid)) {
+      return true
+    }
+
+    // 2. Check top-level assignedTeacherNames
+    const assignedNames = asArray(fields.assignedTeacherNames).map((v) => asString(v).toLowerCase())
+    if (
+      (teacherFullName && assignedNames.includes(teacherFullName)) ||
+      (teacherNickname && assignedNames.includes(teacherNickname))
+    ) {
+      return true
+    }
+
+    // 3. Check inside schedule.sessions array
+    const schedule = asRecord(fields.schedule)
+    const sessions = asArray(schedule.sessions)
+    return sessions.some((sessionItem) => {
+      const sessionMap = asRecord(sessionItem)
+      const sTeacherId = asString(sessionMap.teacherId)
+      const sTeacherName = asString(sessionMap.teacherName).toLowerCase()
+
+      if (sTeacherId && sTeacherId === teacherUid) {
+        return true
+      }
+      if (teacherFullName && sTeacherName && sTeacherName === teacherFullName) {
+        return true
+      }
+      if (teacherNickname && sTeacherName && sTeacherName === teacherNickname) {
+        return true
+      }
+      return false
+    })
+  })
+}
+
 async function getUserEnrollmentDocuments(session: UserSession) {
   const response = await fetch(getEnrollmentsRunQueryUrl(), {
     method: "POST",
@@ -1751,8 +1833,10 @@ async function getUserClassEnrollmentDocumentsByClass(
   })
 }
 
-export async function getUserEnrollments(session: UserSession) {
-  const documents = await getUserEnrollmentDocuments(session)
+export async function getUserEnrollments(session: UserSession, profile?: UserProfile | null) {
+  const documents = profile?.role === "teacher"
+    ? await getTeacherEnrollmentDocuments(session, profile)
+    : await getUserEnrollmentDocuments(session)
 
   return documents
     .filter(isClassEnrollmentDocument)
@@ -1797,8 +1881,10 @@ export async function getExistingActiveEventEnrollment(session: UserSession, eve
   )
 }
 
-export async function getUserEnrollmentOverview(session: UserSession) {
-  const documents = await getUserEnrollmentDocuments(session)
+export async function getUserEnrollmentOverview(session: UserSession, profile?: UserProfile | null) {
+  const documents = profile?.role === "teacher"
+    ? await getTeacherEnrollmentDocuments(session, profile)
+    : await getUserEnrollmentDocuments(session)
   const classEnrollments = documents
     .filter(isClassEnrollmentDocument)
     .map(mapEnrollmentDocument)
@@ -2069,3 +2155,4 @@ export async function saveEventEnrollment(session: UserSession, input: EventEnro
 
   return enrollmentId
 }
+
