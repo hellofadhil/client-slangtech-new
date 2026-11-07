@@ -161,9 +161,8 @@ export function Navigation() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="center" className="w-72 p-2 shadow-xl border-border/80">
                     <div className="px-2 py-1.5">
-                      <p className="text-[11px] font-black tracking-wider uppercase text-muted-foreground flex items-center gap-1.5">
-                        <ShieldCheck className="size-3.5 text-primary" />
-                        Portal Resmi Pemerintah
+                      <p className="text-[11px] font-bold tracking-wider uppercase text-muted-foreground">
+                        Tautan Penting
                       </p>
                     </div>
                     <DropdownMenuItem asChild>
@@ -178,7 +177,7 @@ export function Navigation() {
                         </span>
                         <div>
                           <p className="text-xs font-bold text-foreground">Imigrasi & M-Paspor</p>
-                          <p className="text-[11px] text-muted-foreground">Antrean paspor & eVisa online</p>
+                          <p className="text-[11px] text-muted-foreground">Antrean paspor dan visa online</p>
                         </div>
                       </a>
                     </DropdownMenuItem>
@@ -193,8 +192,8 @@ export function Navigation() {
                           <Briefcase className="size-4" />
                         </span>
                         <div>
-                          <p className="text-xs font-bold text-foreground">Depnaker & BP2MI</p>
-                          <p className="text-[11px] text-muted-foreground">SIAPkerja & penempatan PMI</p>
+                          <p className="text-xs font-bold text-foreground">Kemnaker & BP2MI</p>
+                          <p className="text-[11px] text-muted-foreground">SIAPkerja dan info pekerja migran</p>
                         </div>
                       </a>
                     </DropdownMenuItem>
@@ -209,8 +208,8 @@ export function Navigation() {
                           <GraduationCap className="size-4" />
                         </span>
                         <div>
-                          <p className="text-xs font-bold text-foreground">Ujian Sertifikasi Bahasa</p>
-                          <p className="text-[11px] text-muted-foreground">Info tes HSK, TOCFL, JLPT</p>
+                          <p className="text-xs font-bold text-foreground">Sertifikasi Bahasa</p>
+                          <p className="text-[11px] text-muted-foreground">Jadwal HSK, TOCFL, dan JLPT</p>
                         </div>
                       </a>
                     </DropdownMenuItem>
@@ -220,7 +219,7 @@ export function Navigation() {
                         href="/informasi"
                         className="flex items-center justify-between p-2.5 rounded-lg font-bold text-xs text-primary transition hover:bg-brand-surface cursor-pointer"
                       >
-                        <span>Buka Pusat Informasi Lengkap</span>
+                        <span>Lihat Semua Tautan</span>
                         <ArrowRight className="size-3.5" />
                       </Link>
                     </DropdownMenuItem>

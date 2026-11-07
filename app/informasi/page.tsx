@@ -5,9 +5,9 @@ import { InformationPageContent } from "@/features/information/components/inform
 import { getInformationResources } from "@/features/information/services/information"
 
 export const metadata: Metadata = {
-  title: "Pusat Informasi & Tautan Resmi Pemerintah - LKP SlangTech",
+  title: "Informasi & Tautan Penting - LKP SlangTech",
   description:
-    "Akses portal resmi Ditjen Imigrasi, Layanan Paspor Online, Kemenaker SIAPkerja, BP2MI, dan informasi sertifikasi bahasa internasional resmi.",
+    "Kumpulan rujukan situs Ditjen Imigrasi, Layanan M-Paspor, Kemnaker SIAPkerja, BP2MI, dan lembaga sertifikasi bahasa.",
 }
 
 export const dynamic = "force-dynamic"

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { Search, Globe, Briefcase, GraduationCap, Layers, ShieldCheck, ExternalLink, Info } from "lucide-react"
+import { Search, Globe, Briefcase, GraduationCap, Layers } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { InformationCard } from "./information-card"
 import type { InformationResource, InformationCategory } from "../types"
@@ -11,10 +11,10 @@ interface InformationPageContentProps {
 }
 
 const categories: Array<{ id: InformationCategory; label: string; icon: typeof Layers }> = [
-  { id: "all", label: "Semua Informasi", icon: Layers },
+  { id: "all", label: "Semua", icon: Layers },
   { id: "imigrasi", label: "Imigrasi & Paspor", icon: Globe },
-  { id: "depnaker", label: "Depnaker & BP2MI", icon: Briefcase },
-  { id: "sertifikasi", label: "Ujian Bahasa Resmi", icon: GraduationCap },
+  { id: "depnaker", label: "Kemnaker & BP2MI", icon: Briefcase },
+  { id: "sertifikasi", label: "Sertifikasi Bahasa", icon: GraduationCap },
 ]
 
 export function InformationPageContent({ initialResources }: InformationPageContentProps) {
@@ -39,26 +39,14 @@ export function InformationPageContent({ initialResources }: InformationPageCont
   return (
     <div className="py-12 sm:py-16">
       <div className="max-w-7xl mx-auto px-6">
-        {/* Header Hero */}
-        <div className="text-center max-w-3xl mx-auto space-y-4">
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-brand-mint/60 px-4 py-1.5 text-xs font-black text-primary">
-            <ShieldCheck className="size-4" />
-            Portal Tautan Resmi & Regulasi
-          </div>
-          <h1 className="text-3xl sm:text-5xl font-black text-foreground tracking-normal leading-tight">
-            Pusat Informasi & Tautan Resmi Pemerintah
+        {/* Header */}
+        <div className="text-center max-w-2xl mx-auto space-y-3">
+          <h1 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">
+            Informasi & Tautan Penting
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-            Akses langsung ke portal resmi instansi pemerintah Republik Indonesia (Imigrasi, Kemnaker, BP2MI) serta lembaga penguji sertifikasi bahasa internasional untuk mendukung persiapan studi dan karier ke luar negeri Anda.
+            Kumpulan rujukan situs Imigrasi, Kemnaker, BP2MI, dan lembaga sertifikasi bahasa untuk keperluan paspor, visa, serta kerja ke luar negeri.
           </p>
-        </div>
-
-        {/* Disclaimer / Notice Alert */}
-        <div className="mt-8 max-w-4xl mx-auto rounded-2xl border border-primary/20 bg-gradient-to-r from-brand-mint/30 via-white to-brand-mint/30 p-4 sm:p-5 flex items-start gap-3.5 shadow-xs">
-          <Info className="size-5 shrink-0 text-primary mt-0.5" />
-          <div className="text-xs sm:text-sm text-foreground/80 leading-relaxed">
-            <strong className="font-bold text-foreground">Catatan Keamanan:</strong> Seluruh tautan di bawah mengarah langsung ke domain resmi instansi pemerintah (.go.id) dan badan sertifikasi resmi internasional. LKP SlangTech tidak memungut biaya apapun atas akses portal-portal resmi tersebut.
-          </div>
         </div>
 
         {/* Filter and Search Bar */}
@@ -72,9 +60,9 @@ export function InformationPageContent({ initialResources }: InformationPageCont
                 <button
                   key={cat.id}
                   onClick={() => setSelectedCategory(cat.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-colors ${
                     isActive
-                      ? "bg-primary text-white shadow-sm"
+                      ? "bg-primary text-white"
                       : "bg-white border border-border text-muted-foreground hover:bg-brand-surface hover:text-foreground"
                   }`}
                 >
@@ -90,7 +78,7 @@ export function InformationPageContent({ initialResources }: InformationPageCont
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Cari info paspor, visa, siapkerja..."
+              placeholder="Cari layanan atau instansi..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 h-10 rounded-xl bg-white text-xs sm:text-sm border-border"
@@ -99,12 +87,12 @@ export function InformationPageContent({ initialResources }: InformationPageCont
         </div>
 
         {/* Results Grid */}
-        <div className="mt-10">
+        <div className="mt-8">
           {filteredResources.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-border bg-white p-12 text-center max-w-lg mx-auto">
-              <p className="text-base font-bold text-foreground">Informasi tidak ditemukan</p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Coba gunakan kata kunci pencarian yang lain atau pilih kategori &quot;Semua Informasi&quot;.
+            <div className="rounded-xl border border-dashed border-border bg-white p-10 text-center max-w-md mx-auto">
+              <p className="text-sm font-bold text-foreground">Tidak ada hasil yang sesuai</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Coba gunakan kata kunci lain atau pilih tab Semua.
               </p>
               <button
                 type="button"
@@ -112,13 +100,13 @@ export function InformationPageContent({ initialResources }: InformationPageCont
                   setSelectedCategory("all")
                   setSearchQuery("")
                 }}
-                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-brand-green-strong transition"
+                className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-brand-green-strong transition-colors"
               >
-                Reset Pencarian
+                Reset pencarian
               </button>
             </div>
           ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {filteredResources.map((item) => (
                 <InformationCard key={item.id} item={item} />
               ))}
