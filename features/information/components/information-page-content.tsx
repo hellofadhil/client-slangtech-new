@@ -37,8 +37,8 @@ export function InformationPageContent({ initialResources }: InformationPageCont
   }, [initialResources, selectedCategory, searchQuery])
 
   return (
-    <div className="py-12 sm:py-16">
-      <div className="max-w-7xl mx-auto px-6">
+    <div className="py-10 sm:py-14">
+      <div className="max-w-6xl mx-auto px-6">
         {/* Header */}
         <div className="text-center max-w-2xl mx-auto space-y-3">
           <h1 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">
@@ -50,9 +50,9 @@ export function InformationPageContent({ initialResources }: InformationPageCont
         </div>
 
         {/* Filter and Search Bar */}
-        <div className="mt-10 max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-4 justify-between">
+        <div className="mt-8 flex flex-col md:flex-row items-center gap-4 justify-between">
           {/* Category Tabs */}
-          <div className="flex flex-wrap items-center justify-center gap-2 w-full md:w-auto">
+          <div className="flex flex-wrap items-center justify-center gap-1.5 w-full md:w-auto">
             {categories.map((cat) => {
               const Icon = cat.icon
               const isActive = selectedCategory === cat.id
@@ -60,13 +60,13 @@ export function InformationPageContent({ initialResources }: InformationPageCont
                 <button
                   key={cat.id}
                   onClick={() => setSelectedCategory(cat.id)}
-                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-colors ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold transition-colors ${
                     isActive
-                      ? "bg-primary text-white"
+                      ? "bg-primary text-white shadow-2xs"
                       : "bg-white border border-border text-muted-foreground hover:bg-brand-surface hover:text-foreground"
                   }`}
                 >
-                  <Icon className="size-4" />
+                  <Icon className="size-3.5" />
                   <span>{cat.label}</span>
                 </button>
               )
@@ -74,20 +74,20 @@ export function InformationPageContent({ initialResources }: InformationPageCont
           </div>
 
           {/* Search Box */}
-          <div className="relative w-full md:w-72">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <div className="relative w-full md:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Cari layanan atau instansi..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-10 rounded-xl bg-white text-xs sm:text-sm border-border"
+              className="pl-9 h-9 rounded-lg bg-white text-xs border-border"
             />
           </div>
         </div>
 
         {/* Results Grid */}
-        <div className="mt-8">
+        <div className="mt-6">
           {filteredResources.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border bg-white p-10 text-center max-w-md mx-auto">
               <p className="text-sm font-bold text-foreground">Tidak ada hasil yang sesuai</p>
@@ -106,7 +106,7 @@ export function InformationPageContent({ initialResources }: InformationPageCont
               </button>
             </div>
           ) : (
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {filteredResources.map((item) => (
                 <InformationCard key={item.id} item={item} />
               ))}

@@ -6,19 +6,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { useLenis } from "lenis/react"
-import {
-  ArrowRight,
-  Briefcase,
-  CalendarClock,
-  ChevronDown,
-  Globe,
-  GraduationCap,
-  LayoutDashboard,
-  LogOut,
-  Menu,
-  ShieldCheck,
-  X,
-} from "lucide-react"
+import { CalendarClock, GraduationCap, LayoutDashboard, LogOut, Menu, X } from "lucide-react"
 
 import {
   DropdownMenu,
@@ -91,7 +79,6 @@ export function Navigation() {
     { label: "Our Class", href: "/classes" },
     { label: "Events", href: "/events" },
     { label: "Informasi", href: "/informasi" },
-    { label: "Testimonials", href: "#testimonials" },
     { label: "Contact", href: "#contact" },
   ]
 
@@ -145,114 +132,30 @@ export function Navigation() {
         </Link>
 
         <div className="hidden md:flex items-center gap-8">
-          {navLinks.map((item, i) => {
-            if (item.label === "Informasi") {
-              return (
-                <DropdownMenu key={item.label}>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      className={`text-sm font-medium tracking-wide transition-colors inline-flex items-center gap-1 relative ${
-                        useSolidNav ? "text-white/80 hover:text-brand-lime" : "text-foreground/75 hover:text-foreground"
-                      }`}
-                    >
-                      <span>{item.label}</span>
-                      <ChevronDown className="size-3.5 opacity-70" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="center" className="w-72 p-2 shadow-xl border-border/80">
-                    <div className="px-2 py-1.5">
-                      <p className="text-[11px] font-bold tracking-wider uppercase text-muted-foreground">
-                        Tautan Penting
-                      </p>
-                    </div>
-                    <DropdownMenuItem asChild>
-                      <a
-                        href="https://antrian.imigrasi.go.id/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-start gap-3 p-2.5 rounded-lg cursor-pointer transition hover:bg-brand-surface"
-                      >
-                        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 mt-0.5">
-                          <Globe className="size-4" />
-                        </span>
-                        <div>
-                          <p className="text-xs font-bold text-foreground">Imigrasi & M-Paspor</p>
-                          <p className="text-[11px] text-muted-foreground">Antrean paspor dan visa online</p>
-                        </div>
-                      </a>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <a
-                        href="https://siapkerja.kemnaker.go.id/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-start gap-3 p-2.5 rounded-lg cursor-pointer transition hover:bg-brand-surface"
-                      >
-                        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 mt-0.5">
-                          <Briefcase className="size-4" />
-                        </span>
-                        <div>
-                          <p className="text-xs font-bold text-foreground">Kemnaker & BP2MI</p>
-                          <p className="text-[11px] text-muted-foreground">SIAPkerja dan info pekerja migran</p>
-                        </div>
-                      </a>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <a
-                        href="https://www.chinesetest.cn/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-start gap-3 p-2.5 rounded-lg cursor-pointer transition hover:bg-brand-surface"
-                      >
-                        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600 mt-0.5">
-                          <GraduationCap className="size-4" />
-                        </span>
-                        <div>
-                          <p className="text-xs font-bold text-foreground">Sertifikasi Bahasa</p>
-                          <p className="text-[11px] text-muted-foreground">Jadwal HSK, TOCFL, dan JLPT</p>
-                        </div>
-                      </a>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link
-                        href="/informasi"
-                        className="flex items-center justify-between p-2.5 rounded-lg font-bold text-xs text-primary transition hover:bg-brand-surface cursor-pointer"
-                      >
-                        <span>Lihat Semua Tautan</span>
-                        <ArrowRight className="size-3.5" />
-                      </Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )
-            }
-
-            return (
-              <motion.button
-                key={item.label}
-                onClick={() => scrollToSection(item.href)}
-                className={`text-sm font-medium tracking-wide transition-colors relative ${
-                  useSolidNav ? "text-white/80 hover:text-brand-lime" : "text-foreground/75 hover:text-foreground"
+          {navLinks.map((item, i) => (
+            <motion.button
+              key={item.label}
+              onClick={() => scrollToSection(item.href)}
+              className={`text-sm font-medium tracking-wide transition-colors relative ${
+                useSolidNav ? "text-white/80 hover:text-brand-lime" : "text-foreground/75 hover:text-foreground"
+              }`}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1, duration: 0.4, ease: [0.25, 0.4, 0.25, 1] }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              {item.label}
+              <motion.span
+                className={`absolute -bottom-1 left-0 h-0.5 w-full origin-left ${
+                  useSolidNav ? "bg-brand-lime" : "bg-foreground"
                 }`}
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1, duration: 0.4, ease: [0.25, 0.4, 0.25, 1] }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                {item.label}
-                <motion.span
-                  className={`absolute -bottom-1 left-0 h-0.5 w-full origin-left ${
-                    useSolidNav ? "bg-brand-lime" : "bg-foreground"
-                  }`}
-                  initial={{ scaleX: 0 }}
-                  whileHover={{ scaleX: 1 }}
-                  transition={{ duration: 0.3, ease: [0.25, 0.4, 0.25, 1] }}
-                />
-              </motion.button>
-            )
-          })}
+                initial={{ scaleX: 0 }}
+                whileHover={{ scaleX: 1 }}
+                transition={{ duration: 0.3, ease: [0.25, 0.4, 0.25, 1] }}
+              />
+            </motion.button>
+          ))}
         </div>
 
         {isLoggedIn ? (
