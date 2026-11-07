@@ -369,11 +369,15 @@ function isEventAttendanceWindowOpen(value: string) {
 }
 
 function isActiveClassEnrollment(enrollment: ClassEnrollment) {
-  return enrollment.status !== "cancelled"
+  return enrollment.status === "waiting_payment_confirmation" || enrollment.status === "confirmed"
 }
 
 function isActiveEventEnrollment(enrollment: EventEnrollment) {
-  return enrollment.status !== "cancelled"
+  return (
+    enrollment.status === "registered" ||
+    enrollment.status === "waiting_payment_confirmation" ||
+    enrollment.status === "confirmed"
+  )
 }
 
 function createRescheduleRequestId(uid: string, enrollmentId: string) {

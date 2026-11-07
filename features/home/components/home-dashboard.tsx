@@ -1301,7 +1301,7 @@ function PaymentPanel({ enrollment }: { enrollment: DashboardEnrollment }) {
 }
 
 function getActiveClassEnrollments(enrollments: ClassEnrollment[]) {
-  return enrollments.filter((enrollment) => enrollment.status === "confirmed")
+  return enrollments.filter((enrollment) => enrollment.status !== "cancelled")
 }
 
 function DashboardSidebarNav({
@@ -1435,7 +1435,7 @@ function DashboardHomeView({
   onOpenClasses: () => void
   refreshButton: ReactNode
 }) {
-  const activeClassCount = getActiveClassEnrollments(enrollments).length
+  const activeClassCount = enrollments.filter((enrollment) => enrollment.status === "confirmed").length
   const nextSession = selectedEnrollment
     ? getNextSession(selectedEnrollment.schedule?.sessions ?? [])
     : null
@@ -2490,6 +2490,7 @@ export function HomeDashboard() {
   const selectedEnrollment = useMemo(() => {
     return (
       enrollments.find((enrollment) => enrollment.id === selectedEnrollmentId) ??
+      enrollments.find((enrollment) => enrollment.status === "confirmed") ??
       enrollments[0] ??
       null
     )
@@ -2532,7 +2533,8 @@ export function HomeDashboard() {
         return currentId
       }
 
-      return classEnrollments[0]?.id ?? ""
+      const confirmedClass = classEnrollments.find((enrollment) => enrollment.status === "confirmed")
+      return confirmedClass?.id ?? classEnrollments[0]?.id ?? ""
     })
   }, [isTeacher])
 
