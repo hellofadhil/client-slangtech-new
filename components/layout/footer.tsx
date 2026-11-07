@@ -48,7 +48,7 @@ export function Footer() {
     },
     {
       title: "Quick Links",
-      links: ["Home", "Our Class", "Programs", "Testimonials"],
+      links: ["Home", "Our Class", "Events", "Informasi Resmi"],
     },
     {
       title: "Company",
@@ -161,7 +161,17 @@ export function Footer() {
                   <li key={item}>
                     <motion.div whileHover={{ x: 4 }} transition={{ type: "spring", stiffness: 400, damping: 17 }}>
                       <Link
-                        href="#"
+                        href={
+                          item === "Our Class"
+                            ? "/classes"
+                            : item === "Events"
+                            ? "/events"
+                            : item === "Informasi Resmi"
+                            ? "/informasi"
+                            : item === "Home"
+                            ? "/"
+                            : "#"
+                        }
                         className="text-white/75 hover:text-brand-lime font-mono text-sm transition-colors inline-block"
                       >
                         {item}
