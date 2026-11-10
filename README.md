@@ -150,13 +150,13 @@ Mengatur siklus hidup pendaftaran siswa:
 
 | Layanan | Endpoint / Protokol | Digunakan Pada | Fungsi |
 | :--- | :--- | :--- | :--- |
-| Google Firebase Identity Toolkit | `https://identitytoolkit.googleapis.com/v1/accounts:lookup` | Route Handlers (`upload-payment`, `whatsapp`, email) | Verifikasi `idToken` sesi siswa sebelum request mutasi data diproses serverless Next.js. |
-| Google Cloud Firestore REST API | `https://firestore.googleapis.com/v1/...` | `features/classes`, `features/events`, `features/enrollments`, `features/auth` | Operasi baca dan simpan dokumen koleksi `classes`, `events`, `enrollments`, `users`, `information`, dan `settings`. |
-| Cloudflare R2 Storage | `https://{ACCOUNT_ID}.r2.cloudflarestorage.com/{BUCKET_NAME}` | `/api/upload-payment` | Penyimpanan file bukti transfer (`payment-proofs/`) dan dokumentasi presensi (`event-attendances/`) via protokol AWS S3 SigV4 PUT. |
-| TinyPNG API | `https://api.tinify.com/shrink` | `/api/upload-payment` | Kompresi gambar bukti transfer sebelum dikirim ke R2 agar berkas di bawah batas 1.5 MB. Mendukung rotasi API key. |
-| Baselab WhatsApp Gateway | `https://api-wa.baselab.web.id/api/send-message` | `/api/whatsapp/notify-admin` | Pengiriman notifikasi WhatsApp ke admin saat formulir pendaftaran baru masuk. |
-| Hostinger SMTP Mail Server | `smtp.hostinger.com` (Port 465 SSL) | `/api/class-registration-email`, `/api/event-registration-email` | Pengiriman email tanda terima pendaftaran siswa dan notifikasi pendaftaran ke admin melalui Nodemailer. |
-| API Daerah Indonesia | `https://api-daerah-indonesia.vercel.app/api` | `/api/regions` | Penyedia data wilayah (provinsi, kabupaten/kota, kecamatan, kelurahan) untuk form setup profil siswa dengan cache 7 hari. |
+| Google Firebase Identity Toolkit | `identitytoolkit.googleapis.com`<br/>`/v1/accounts:lookup` | Route Handlers<br/>(`upload-payment`, `whatsapp`, email) | Verifikasi `idToken` sesi siswa sebelum request mutasi data diproses serverless Next.js. |
+| Google Cloud Firestore REST API | `firestore.googleapis.com`<br/>`/v1/projects/{PROJECT_ID}/...` | `features/classes`<br/>`features/events`<br/>`features/enrollments`<br/>`features/auth` | Operasi baca dan simpan dokumen koleksi `classes`, `events`, `enrollments`, `users`, `information`, dan `settings`. |
+| Cloudflare R2 Storage | `{ACCOUNT_ID}.r2.cloudflarestorage.com`<br/>`/{BUCKET_NAME}/*` | `/api/upload-payment` | Penyimpanan file bukti transfer (`payment-proofs/`) dan dokumentasi presensi (`event-attendances/`) via protokol AWS S3 SigV4 PUT. |
+| TinyPNG API | `api.tinify.com`<br/>`/shrink` | `/api/upload-payment` | Kompresi gambar bukti transfer sebelum dikirim ke R2 agar berkas di bawah batas 1.5 MB. Mendukung rotasi API key. |
+| Baselab WhatsApp Gateway | `api-wa.baselab.web.id`<br/>`/api/send-message` | `/api/whatsapp/notify-admin` | Pengiriman notifikasi WhatsApp ke admin saat formulir pendaftaran baru masuk. |
+| Hostinger SMTP Mail Server | `smtp.hostinger.com`<br/>`Port 465 (SSL) / 587 (TLS)` | `/api/class-registration-email`<br/>`/api/event-registration-email` | Pengiriman email tanda terima pendaftaran siswa dan notifikasi pendaftaran ke admin melalui Nodemailer. |
+| API Daerah Indonesia | `api-daerah-indonesia.vercel.app`<br/>`/api/...` | `/api/regions` | Penyedia data wilayah (provinsi, kabupaten/kota, kecamatan, kelurahan) untuk form setup profil siswa dengan cache 7 hari. |
 
 ---
 
