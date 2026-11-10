@@ -43,46 +43,31 @@ Berikut alur transaksi dan arsitektur aplikasi dari sisi Client, mulai dari aute
 
 ```mermaid
 flowchart TD
-    subgraph UserJourney ["Alur Interaksi Siswa (Client Web)"]
+    Step1["1. User Login / Register<br/><i>(Firebase Authentication)</i>"]
+    Step2["2. User Daftar Kelas / Event<br/><i>(Pilih Program & Isi Form Pendaftaran)</i>"]
+    Step3["3. User Input Pembayaran<br/><i>(Pilih Bank Transfer & Unggah Bukti Bayar)</i>"]
+
+    subgraph Step4["4. Pemrosesan & Penyimpanan Data"]
         direction TB
-        Step1(["1. User Login / Register - Firebase Authentication"])
-        Step2(["2. User Pilih & Daftar Program - Kelas / Event"])
-        Step3(["3. User Input Pembayaran & Unggah Bukti Transfer"])
+        S4_Compress["Kompresi Gambar Bukti<br/><i>(TinyPNG API)</i>"]
+        S4_R2["Simpan Gambar ke Object Storage<br/><i>(Cloudflare R2)</i>"]
+        S4_Firestore["Simpan Data Transaksi Pendaftaran<br/><i>(Firebase Firestore)</i>"]
+
+        S4_Compress --> S4_R2
     end
 
-    subgraph StorageLayer ["Pemrosesan & Penyimpanan Data"]
+    subgraph Step5["5. Notifikasi Sistem"]
         direction TB
-        Compress("Kompresi Berkas Bukti Otomatis - TinyPNG API")
-        Storage[("Penyimpanan Objek CDN - Cloudflare R2")]
-        Firestore[("Database Dokumen NoSQL - Firebase Firestore")]
-
-        Compress -->|"Upload Berkas Ringan"| Storage
+        S5_WA["Notifikasi WhatsApp Masuk ke Admin<br/><i>(Baselab WA Gateway)</i>"]
+        S5_Email["Email Tanda Terima ke Siswa & Admin<br/><i>(Hostinger SMTP)</i>"]
     end
 
-    subgraph NotifyLayer ["Notifikasi Sistem Otomatis"]
-        direction TB
-        WA[["Notifikasi WhatsApp ke Admin - Baselab Gateway"]]
-        Email[["Email Tanda Terima ke Siswa & Admin - Hostinger SMTP"]]
-    end
-
-    Step1 -->|"Sesi Terverifikasi"| Step2
-    Step2 -->|"Pilih Program & Jadwal"| Step3
-
-    Step3 -->|"Kirim Berkas Gambar"| Compress
-    Step3 -->|"Kirim Data Pendaftaran"| Firestore
-
-    Storage -.->|"URL Bukti Tersedia"| NotifyLayer
-    Firestore -.->|"Trigger Status: waiting_confirmation"| NotifyLayer
-
-    classDef userAction fill:#eff6ff,stroke:#3b82f6,stroke-width:2px,color:#1e40af;
-    classDef processNode fill:#fef3c7,stroke:#f59e0b,stroke-width:2px,color:#92400e;
-    classDef storageNode fill:#ecfdf5,stroke:#10b981,stroke-width:2px,color:#065f46;
-    classDef notifyNode fill:#fdf4ff,stroke:#d946ef,stroke-width:2px,color:#86198f;
-
-    class Step1,Step2,Step3 userAction;
-    class Compress processNode;
-    class Storage,Firestore storageNode;
-    class WA,Email notifyNode;
+    Step1 --> Step2
+    Step2 --> Step3
+    Step3 --> S4_Compress
+    Step3 --> S4_Firestore
+    S4_R2 --> Step5
+    S4_Firestore --> Step5
 ```
 
 ---
