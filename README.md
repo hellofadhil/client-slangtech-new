@@ -72,41 +72,37 @@ flowchart TD
 
 ---
 
-### Rincian Komponen Arsitektur
+### Rincian Alur dan Komponen Aplikasi
 
-#### 1. Web App (Client Presentation Layer)
-- Antarmuka web siswa dan publik berbasis Next.js 16 App Router dengan Server-Side Rendering (SSR) dan Client Components.
-- Modul halaman:
-  - `/` dan `/home`: Beranda publik, informasi keunggulan program, ulasan alumni, dan navigasi pendaftaran.
-  - `/classes` dan `/classes/[slug]`: Katalog kelas privat dan grup, silabus, fasilitas, serta detail biaya.
-  - `/events` dan `/events/[slug]`: Katalog workshop, webinar, jadwal sesi, profil pemateri, dan presensi per sesi.
-  - `/classes/[slug]/register` dan `/events/[slug]/register`: Alur pendaftaran multi-step, pemilihan metode transfer bank, dan upload bukti bayar.
-  - `/login`, `/register`, dan `/profile/setup`: Autentikasi siswa dan pengisian data domisili wilayah.
-  - `/informasi`: Publikasi pengumuman dan berita resmi LKP SlangTech.
+Penjelasan bagaimana setiap bagian aplikasi bekerja secara berurutan saat siswa mendaftar program:
 
-#### 2. Content Service
-Content Service mengelola pengambilan data publik langsung dari Firestore REST API tanpa server backend terpisah:
-- `classes.ts`: Mengambil data kelas aktif, filter kategori (privat/grup), pencarian teks, dan detail kelas berdasarkan slug atau ID dari koleksi `classes`.
-- `events.ts`: Mengambil data event, jadwal sesi, status kuota, dan profil instruktur dari koleksi `events`.
-- `information.ts`: Mengambil artikel dan pengumuman dari koleksi `information`.
-- Mekanisme: Request langsung ke Firestore REST API menggunakan fungsi `fetch` bawaan Next.js dengan kontrol cache.
+#### 1. Tampilan Web Siswa (`client/app`)
+Bagian depan website yang dilihat dan digunakan langsung oleh siswa melalui browser:
+- Halaman Beranda (`/home`): Menampilkan perkenalan program, materi kursus, dan testimoni alumni.
+- Katalog Kelas & Event (`/classes`, `/events`): Halaman untuk melihat detail silabus, profil pengajar, jadwal pertemuan, dan biaya.
+- Formulir Pendaftaran (`/register`, `/profile/setup`): Tempat siswa mendaftar akun baru, melengkapi profil domisili, dan mengisi formulir program.
+- Halaman Informasi (`/informasi`): Berisi update pengumuman dan berita resmi dari LKP SlangTech.
 
-#### 3. User & Authorizer Service
-- Layanan autentikasi (`firebase-auth.ts`):
-  - Mengelola sesi login, pendaftaran akun baru, dan refresh token melalui Firebase Client SDK.
-  - Menyimpan data profil siswa (nama, WhatsApp, domisili provinsi hingga kelurahan) pada dokumen Firestore `users/{uid}`.
-- Authorizer di Route Handlers (`verifyFirebaseUser`):
-  - Memvalidasi token sesi siswa (`idToken`) ke endpoint Google Identity Toolkit sebelum memproses upload bukti bayar atau pengiriman email.
-  - Memastikan request mutasi data berasal dari pengguna yang terautentikasi.
+#### 2. Layanan Konten Program (`features/classes` & `features/events`)
+Bagian yang bertugas mengambil dan menampilkan data kursus dari database:
+- Mengambil daftar kelas dan event aktif secara langsung dari Google Cloud Firestore.
+- Menyaring data berdasarkan kategori (kursus privat atau grup) serta pencarian nama kelas.
+- Menyajikan detail informasi sesi belajar secara cepat tanpa perlu menunggu respon server terpisah.
 
-#### 4. Enrollment & Payment Service (`enrollments.ts`)
-Mengatur siklus hidup pendaftaran siswa:
-1. Validasi sesi login dan kelengkapan data pendaftaran.
-2. Pengunggahan berkas bukti transfer ke `/api/upload-payment`.
-3. Pembuatan dokumen pendaftaran baru di koleksi Firestore `enrollments` dengan status `waiting_payment_confirmation`.
-4. Pengiriman notifikasi pendaftaran masuk ke nomor WhatsApp admin via `/api/whatsapp/notify-admin`.
-5. Pengiriman email tanda terima ke siswa dan notifikasi pendaftaran ke admin via `/api/*-registration-email`.
-6. Pengelolaan pengajuan jadwal ulang (*reschedule*) dan presensi sesi event (*event attendance*).
+#### 3. Keamanan Akun dan Sesi Siswa (`features/auth`)
+Bagian yang menjaga keamanan akses akun siswa:
+- Menangani pendaftaran akun baru, login, dan reset kata sandi menggunakan Firebase Authentication.
+- Memeriksa keabsahan tiket masuk (*token login*) siswa setiap kali mengirim formulir atau mengunggah bukti bayar, agar data tidak bisa dimanipulasi oleh pihak luar.
+- Menyimpan profil siswa seperti nama lengkap, nomor WhatsApp, serta domisili tempat tinggal.
+
+#### 4. Layanan Pendaftaran dan Pembayaran (`features/enrollments`)
+Bagian inti yang memproses transaksi saat siswa mendaftar:
+1. Menerima formulir pendaftaran dan berkas bukti transfer bank yang diunggah siswa.
+2. Mengompres ukuran foto bukti bayar secara otomatis lewat TinyPNG agar ukuran berkas tetap ringan dan hemat kuota.
+3. Menyimpan foto bukti bayar ke Cloudflare R2 dan mencatat data transaksi ke database Firestore dengan status "Menunggu Konfirmasi".
+4. Mengirim notifikasi pesan WhatsApp ke admin SlangTech agar pembayaran segera diverifikasi.
+5. Mengirim email bukti pendaftaran ke siswa sebagai tanda terima resmi.
+6. Menyediakan menu bagi siswa untuk melihat jadwal kelas dan mengajukan perubahan jadwal (*reschedule*) bila berhalangan hadir.
 
 ---
 
