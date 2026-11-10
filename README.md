@@ -106,6 +106,23 @@ Bagian inti yang memproses transaksi saat siswa mendaftar:
 
 ---
 
+### Pola Arsitektur Serverless
+
+Aplikasi client ini dibangun di atas fondasi arsitektur **Serverless** (tanpa perlu mengelola server fisik atau VPS manual):
+
+1. **Komputasi On-Demand (Stateless Handlers)**:
+   - Logika backend pada rute `/app/api/*` (seperti upload bukti bayar, pengiriman email, dan notifikasi WhatsApp) berjalan sebagai fungsi serverless.
+   - Fungsi komputasi hanya menyala saat ada panggilan request masuk dari siswa, lalu mati kembali setelah proses selesai (*scale-to-zero*).
+2. **Penyimpanan Berkas & Database Terkelola Penuh**:
+   - **Google Cloud Firestore**: Basis data NoSQL yang mengelola kapasitas dan replikasi data secara otomatis tanpa maintenance server database.
+   - **Cloudflare R2**: Penyimpanan berkas terdistribusi global berbasis CDN tanpa biaya transfer keluar (*zero egress fee*).
+3. **Keuntungan bagi Platform**:
+   - **Bebas Perawatan Server**: Tidak memerlukan instalasi Nginx terpisah, konfigurasi Linux daemon, atau pembaruan keamanan OS berkala.
+   - **Tahan Lonjakan Trafik**: Mampu menangani lonjakan pendaftaran kelas secara otomatis tanpa risiko server tumbang (*crash*).
+   - **Efisiensi Biaya**: Biaya operasional hanya dihitung berdasarkan pemakaian komputasi dan transaksi yang benar-benar aktif (*pay-per-use*).
+
+---
+
 ### Integrasi API Eksternal
 
 | Layanan | Endpoint / Protokol | Digunakan Pada | Fungsi |
