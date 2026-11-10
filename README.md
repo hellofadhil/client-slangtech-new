@@ -6,7 +6,7 @@ Portal publik dan siswa untuk platform kursus dan pelatihan teknologi **LKP Slan
 
 ---
 
-## 🚀 Fitur Utama
+## Fitur Utama
 
 - **Katalog Kelas & Event**:
   - Daftar kelas (Private & Group) dengan deskripsi kurikulum, benefit, dan harga diskon.
@@ -24,7 +24,7 @@ Portal publik dan siswa untuk platform kursus dan pelatihan teknologi **LKP Slan
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Framework**: [Next.js](https://nextjs.org/) 16 (App Router, Turbopack)
 - **UI Library**: [React](https://react.dev/) 19 & [Tailwind CSS](https://tailwindcss.com/)
@@ -37,7 +37,7 @@ Portal publik dan siswa untuk platform kursus dan pelatihan teknologi **LKP Slan
 
 ---
 
-## 🏛️ Arsitektur Aplikasi End-to-End
+## Arsitektur Aplikasi End-to-End
 
 Berikut adalah representasi arsitektur sistem dari sisi aplikasi **Client** mulai dari antarmuka pengguna, API gateway internal (Route Handlers), logika bisnis domain, hingga integrasi database dan API eksternal:
 
@@ -108,59 +108,59 @@ flowchart TD
 
 ---
 
-### 🔍 Rincian Komponen Arsitektur
+### Rincian Komponen Arsitektur
 
 #### 1. Web App (Client Presentation Layer)
-- **Peran**: Antarmuka web publik dan siswa berbasis Next.js 16 (App Router) dengan Server Side Rendering (SSR) dan Client Components.
-- **Halaman & Modul Utama**:
-  - `/` & `/home`: Beranda, hero section interaktif, value proposition, review testimoni, dan CTA program.
-  - `/classes` & `/classes/[slug]`: Katalog eksplorasi kelas program privat & grup beserta silabus, benefit, dan rincian harga.
-  - `/events` & `/events/[slug]`: Informasi workshop, webinar, jadwal sesi, trainer profile, serta absensi kehadiran per sesi event.
-  - `/classes/[slug]/register` & `/events/[slug]/register`: Multi-step wizard pendaftaran siswa, pemilihan bank transfer, dan pengunggahan bukti pembayaran.
-  - `/login`, `/register`, & `/profile/setup`: Portal masuk, pendaftaran akun baru, dan setup profil lengkap domisili wilayah siswa.
-  - `/informasi`: Papan pengumuman dan update penting seputar kegiatan belajar.
+- Antarmuka web siswa dan publik berbasis Next.js 16 App Router dengan Server-Side Rendering (SSR) dan Client Components.
+- Modul halaman:
+  - `/` dan `/home`: Beranda publik, informasi keunggulan program, ulasan alumni, dan navigasi pendaftaran.
+  - `/classes` dan `/classes/[slug]`: Katalog kelas privat dan grup, silabus, fasilitas, serta detail biaya.
+  - `/events` dan `/events/[slug]`: Katalog workshop, webinar, jadwal sesi, profil pemateri, dan presensi per sesi.
+  - `/classes/[slug]/register` dan `/events/[slug]/register`: Alur pendaftaran multi-step, pemilihan metode transfer bank, dan upload bukti bayar.
+  - `/login`, `/register`, dan `/profile/setup`: Autentikasi siswa dan pengisian data domisili wilayah.
+  - `/informasi`: Publikasi pengumuman dan berita resmi LKP SlangTech.
 
-#### 2. Content Service (Layanan Katalog & Konten Publik)
-Content Service bertanggung jawab mengelola dan menyajikan data konten publik ke halaman aplikasi secara efisien tanpa memerlukan server backend terpisah:
-- **`classes.ts`**: Mengambil daftar kelas aktif, filter berdasarkan kategori (`private`/`group`), pencarian teks, dan detail kelas berdasarkan slug/ID dari koleksi Firestore `classes`.
-- **`events.ts`**: Mengambil data event, detail sesi pelatihan, harga tiket (berbayar/gratis), kuota peserta, dan instruktur dari koleksi Firestore `events`.
-- **`information.ts`**: Menyajikan artikel informasi dan pengumuman dari koleksi Firestore `information`.
-- **Mekanisme**: Berkomunikasi langsung ke Google Cloud Firestore via REST API (`https://firestore.googleapis.com/v1/...`) menggunakan `fetch` Next.js dengan kontrol *cache* fleksibel.
+#### 2. Content Service
+Content Service mengelola pengambilan data publik langsung dari Firestore REST API tanpa server backend terpisah:
+- `classes.ts`: Mengambil data kelas aktif, filter kategori (privat/grup), pencarian teks, dan detail kelas berdasarkan slug atau ID dari koleksi `classes`.
+- `events.ts`: Mengambil data event, jadwal sesi, status kuota, dan profil instruktur dari koleksi `events`.
+- `information.ts`: Mengambil artikel dan pengumuman dari koleksi `information`.
+- Mekanisme: Request langsung ke Firestore REST API menggunakan fungsi `fetch` bawaan Next.js dengan kontrol cache.
 
 #### 3. User & Authorizer Service
-- **Layanan Autentikasi (`firebase-auth.ts`)**:
-  - Mengelola sesi login siswa, registrasi akun, dan refresh token melalui Firebase Client SDK & Identity Toolkit REST API.
-  - Menyimpan dan menyinkronkan data profil siswa (nama lengkap, nomor telepon/WhatsApp, provinsi, kabupaten/kota, kecamatan, kelurahan) pada dokumen Firestore `users/{uid}`.
-- **Authorizer di Route Handlers (`verifyFirebaseUser`)**:
-  - Setiap endpoint API sensitif (upload bukti pembayaran, pengiriman notifikasi pendaftaran, dan pengiriman email) memvalidasi `idToken` Firebase yang dikirimkan oleh klien ke endpoint `https://identitytoolkit.googleapis.com/v1/accounts:lookup`.
-  - Mencegah aksi pendaftaran liar atau unggahan berkas tanpa sesi pengguna yang terverifikasi.
+- Layanan autentikasi (`firebase-auth.ts`):
+  - Mengelola sesi login, pendaftaran akun baru, dan refresh token melalui Firebase Client SDK.
+  - Menyimpan data profil siswa (nama, WhatsApp, domisili provinsi hingga kelurahan) pada dokumen Firestore `users/{uid}`.
+- Authorizer di Route Handlers (`verifyFirebaseUser`):
+  - Memvalidasi token sesi siswa (`idToken`) ke endpoint Google Identity Toolkit sebelum memproses upload bukti bayar atau pengiriman email.
+  - Memastikan request mutasi data berasal dari pengguna yang terautentikasi.
 
 #### 4. Enrollment & Payment Service (`enrollments.ts`)
-- Menangani seluruh alur siklus hidup pendaftaran siswa:
-  1. Melakukan validasi sesi dan data pendaftaran siswa.
-  2. Mengunggah bukti transfer melalui endpoint `/api/upload-payment`.
-  3. Menyimpan dokumen pendaftaran ke koleksi Firestore `enrollments` dengan status awal `waiting_payment_confirmation`.
-  4. Memicu pengiriman notifikasi WhatsApp ke admin via `/api/whatsapp/notify-admin`.
-  5. Memicu pengiriman email tanda terima pendaftaran ke siswa dan admin via `/api/class-registration-email` atau `/api/event-registration-email`.
-  6. Mengelola pengajuan perubahan jadwal (*reschedule request*) dan presensi sesi pelatihan (*event attendance*).
+Mengatur siklus hidup pendaftaran siswa:
+1. Validasi sesi login dan kelengkapan data pendaftaran.
+2. Pengunggahan berkas bukti transfer ke `/api/upload-payment`.
+3. Pembuatan dokumen pendaftaran baru di koleksi Firestore `enrollments` dengan status `waiting_payment_confirmation`.
+4. Pengiriman notifikasi pendaftaran masuk ke nomor WhatsApp admin via `/api/whatsapp/notify-admin`.
+5. Pengiriman email tanda terima ke siswa dan notifikasi pendaftaran ke admin via `/api/*-registration-email`.
+6. Pengelolaan pengajuan jadwal ulang (*reschedule*) dan presensi sesi event (*event attendance*).
 
 ---
 
-### 🌐 External APIs yang Di-Hit dan Fungsinya
+### Integrasi API Eksternal
 
-| No | External API / Layanan | Endpoint / Protokol | Tujuan & Fungsi dalam Aplikasi |
-|:---|:---|:---|:---|
-| **1** | **Google Firebase Identity Toolkit API** | `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key={API_KEY}` | **Authorizer & Verifikasi Sesi**: Digunakan oleh Next.js Route Handlers (`/api/upload-payment`, `/api/whatsapp/notify-admin`, `/api/class-registration-email`, dll.) untuk memvalidasi `idToken` milik siswa sebelum transaksi diproses. |
-| **2** | **Google Cloud Firestore REST API** | `https://firestore.googleapis.com/v1/projects/{PROJECT_ID}/databases/(default)/documents` | **Database Utama**: Menyimpan dan mengambil dokumen transaksi `enrollments`, data katalog `classes` & `events`, profil siswa `users`, informasi pengumuman `information`, serta konfigurasi gateway di `settings`. |
-| **3** | **Cloudflare R2 Object Storage** | `https://{ACCOUNT_ID}.r2.cloudflarestorage.com/{BUCKET_NAME}/*` | **Object Storage Berkas**: Tempat penyimpanan berkas bukti transfer (`payment-proofs/`) dan foto dokumentasi absensi event (`event-attendances/`). Menggunakan otorisasi AWS Signature Version 4 (SigV4) via native Node.js crypto PUT request. Berkas diakses publik via CDN `R2_PUBLIC_URL`. |
-| **4** | **TinyPNG Compression API** | `https://api.tinify.com/shrink` | **Kompresi Bukti Pembayaran**: Mengompres gambar bukti transfer secara otomatis sebelum diunggah ke Cloudflare R2 untuk menghemat kapasitas storage, mempercepat waktu muat, dan menjaga ukuran tetap di bawah batas 1.5 MB. Mendukung rotasi multi-API key. |
-| **5** | **Baselab WhatsApp Gateway API** | `https://api-wa.baselab.web.id/api/send-message` | **Notifikasi WhatsApp Admin**: Mengirim notifikasi pesan WhatsApp otomatis ke nomor WhatsApp admin segera setelah siswa mengunggah bukti pendaftaran agar proses verifikasi admin dapat dilakukan secepatnya. |
-| **6** | **Hostinger SMTP Server (Nodemailer)** | `smtp.hostinger.com` (Port 465 SSL / 587 TLS) | **Email Transaksional Siswa & Admin**: Mengirimkan email konfirmasi pendaftaran secara otomatis ke inbox siswa (berisi detail program dan panduan menunggu konfirmasi) serta email pemberitahuan ke admin SlangTech. |
-| **7** | **API Daerah Indonesia** | `https://api-daerah-indonesia.vercel.app/api/...` | **Data Master Wilayah**: Menyediakan data hierarki administratif Indonesia (provinsi, kabupaten/kota, kecamatan, dan kelurahan/desa) secara dinamis dengan caching pada form kelengkapan profil siswa (`/profile/setup`). |
+| Layanan | Endpoint / Protokol | Digunakan Pada | Fungsi |
+| :--- | :--- | :--- | :--- |
+| Google Firebase Identity Toolkit | `https://identitytoolkit.googleapis.com/v1/accounts:lookup` | Route Handlers (`upload-payment`, `whatsapp`, email) | Verifikasi `idToken` sesi siswa sebelum request mutasi data diproses serverless Next.js. |
+| Google Cloud Firestore REST API | `https://firestore.googleapis.com/v1/...` | `features/classes`, `features/events`, `features/enrollments`, `features/auth` | Operasi baca dan simpan dokumen koleksi `classes`, `events`, `enrollments`, `users`, `information`, dan `settings`. |
+| Cloudflare R2 Storage | `https://{ACCOUNT_ID}.r2.cloudflarestorage.com/{BUCKET_NAME}` | `/api/upload-payment` | Penyimpanan file bukti transfer (`payment-proofs/`) dan dokumentasi presensi (`event-attendances/`) via protokol AWS S3 SigV4 PUT. |
+| TinyPNG API | `https://api.tinify.com/shrink` | `/api/upload-payment` | Kompresi gambar bukti transfer sebelum dikirim ke R2 agar berkas di bawah batas 1.5 MB. Mendukung rotasi API key. |
+| Baselab WhatsApp Gateway | `https://api-wa.baselab.web.id/api/send-message` | `/api/whatsapp/notify-admin` | Pengiriman notifikasi WhatsApp ke admin saat formulir pendaftaran baru masuk. |
+| Hostinger SMTP Mail Server | `smtp.hostinger.com` (Port 465 SSL) | `/api/class-registration-email`, `/api/event-registration-email` | Pengiriman email tanda terima pendaftaran siswa dan notifikasi pendaftaran ke admin melalui Nodemailer. |
+| API Daerah Indonesia | `https://api-daerah-indonesia.vercel.app/api` | `/api/regions` | Penyedia data wilayah (provinsi, kabupaten/kota, kecamatan, kelurahan) untuk form setup profil siswa dengan cache 7 hari. |
 
 ---
 
-## 📁 Struktur Direktori
+## Struktur Direktori
 
 ```text
 client/
@@ -198,7 +198,7 @@ client/
 
 ---
 
-## 💻 Panduan Menjalankan
+## Panduan Menjalankan
 
 ### 1. Instalasi Dependensi
 ```bash
