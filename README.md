@@ -39,71 +39,35 @@ Portal publik dan siswa untuk platform kursus dan pelatihan teknologi **LKP Slan
 
 ## Arsitektur Aplikasi End-to-End
 
-Berikut adalah representasi arsitektur sistem dari sisi aplikasi **Client** mulai dari antarmuka pengguna, API gateway internal (Route Handlers), logika bisnis domain, hingga integrasi database dan API eksternal:
+Berikut alur transaksi dan arsitektur aplikasi dari sisi Client, mulai dari autentikasi pengguna hingga pemrosesan berkas dan notifikasi sistem:
 
 ```mermaid
 flowchart TD
-    subgraph ClientLayer["1. Client Web App (Frontend / Presentation Layer)"]
-        UI_Home["Landing & Beranda (/home)"]
-        UI_Classes["Katalog & Detail Kelas (/classes)"]
-        UI_Events["Katalog & Detail Event (/events)"]
-        UI_Enroll["Form Pendaftaran & Bayar (/classes/slug/register, /events/slug/register)"]
-        UI_Auth["Autentikasi & Profil (/login, /register, /profile/setup)"]
+    Step1["1. User Login / Register<br/><i>(Firebase Authentication)</i>"]
+    Step2["2. User Daftar Kelas / Event<br/><i>(Pilih Program & Isi Form Pendaftaran)</i>"]
+    Step3["3. User Input Pembayaran<br/><i>(Pilih Bank Transfer & Unggah Bukti Bayar)</i>"]
+
+    subgraph Step4["4. Pemrosesan & Penyimpanan Data"]
+        direction TB
+        S4_Compress["Kompresi Gambar Bukti<br/><i>(TinyPNG API)</i>"]
+        S4_R2["Simpan Gambar ke Object Storage<br/><i>(Cloudflare R2)</i>"]
+        S4_Firestore["Simpan Data Transaksi Pendaftaran<br/><i>(Firebase Firestore)</i>"]
+
+        S4_Compress --> S4_R2
     end
 
-    subgraph APILayer["2. Internal API Gateway / Route Handlers (Next.js Serverless)"]
-        API_Upload["/api/upload-payment (Upload & Kompresi Bukti Bayar / Absensi)"]
-        API_WA["/api/whatsapp/notify-admin (Notifikasi WA Admin Baru Daftar)"]
-        API_Email["/api/*-registration-email (Kirim Tanda Terima Email via SMTP)"]
-        API_Regions["/api/regions (Proxy Data Wilayah Indonesia)"]
+    subgraph Step5["5. Notifikasi Sistem"]
+        direction TB
+        S5_WA["Notifikasi WhatsApp Masuk ke Admin<br/><i>(Baselab WA Gateway)</i>"]
+        S5_Email["Email Tanda Terima ke Siswa & Admin<br/><i>(Hostinger SMTP)</i>"]
     end
 
-    subgraph ServiceLayer["3. Domain Services (Business Logic)"]
-        SRV_Auth["User & Auth Service (firebase-auth.ts)"]
-        SRV_Content["Content Service (classes.ts, events.ts, information.ts)"]
-        SRV_Enroll["Enrollment & Payment Service (enrollments.ts)"]
-        SRV_Region["Region Service (indonesia-regions.ts)"]
-    end
-
-    subgraph ExternalServices["4. External APIs & Database Store"]
-        EXT_FirebaseAuth["Google Firebase Auth (Identity Toolkit API)"]
-        EXT_Firestore["Google Cloud Firestore (REST API Database)"]
-        EXT_R2["Cloudflare R2 Object Storage (AWS S3-compatible API)"]
-        EXT_TinyPNG["TinyPNG API (Image Compression)"]
-        EXT_Baselab["Baselab WhatsApp Gateway API"]
-        EXT_SMTP["Hostinger SMTP Mail Server"]
-        EXT_RegionsAPI["API Daerah Indonesia (api-daerah-indonesia.vercel.app)"]
-    end
-
-    %% Interaksi Client ke Gateway & Services
-    UI_Auth --> SRV_Auth
-    UI_Classes --> SRV_Content
-    UI_Events --> SRV_Content
-    UI_Enroll --> SRV_Enroll
-
-    UI_Enroll --> API_Upload
-    UI_Enroll --> API_WA
-    UI_Enroll --> API_Email
-    UI_Auth --> API_Regions
-
-    %% Interaksi Gateway ke External Services
-    API_Upload -- "1. Verifikasi ID Token" --> EXT_FirebaseAuth
-    API_Upload -- "2. Kompresi Foto Bukti" --> EXT_TinyPNG
-    API_Upload -- "3. Simpan Objek via S3 SigV4" --> EXT_R2
-
-    API_WA -- "1. Verifikasi ID Token" --> EXT_FirebaseAuth
-    API_WA -- "2. Kirim Notif WhatsApp Admin" --> EXT_Baselab
-
-    API_Email -- "1. Verifikasi ID Token" --> EXT_FirebaseAuth
-    API_Email -- "2. Kirim Email Transaksional Siswa & Admin" --> EXT_SMTP
-
-    API_Regions -- "Proxy & Cache Data Wilayah" --> EXT_RegionsAPI
-
-    %% Interaksi Domain Services ke Firestore & Auth
-    SRV_Auth -- "Login / Register / Refresh Token" --> EXT_FirebaseAuth
-    SRV_Auth -- "Simpan & Baca Profil Siswa" --> EXT_Firestore
-    SRV_Content -- "Ambil Data Kelas, Event & Pengumuman" --> EXT_Firestore
-    SRV_Enroll -- "Query & Simpan Transaksi Pendaftaran" --> EXT_Firestore
+    Step1 --> Step2
+    Step2 --> Step3
+    Step3 --> S4_Compress
+    Step3 --> S4_Firestore
+    S4_R2 --> Step5
+    S4_Firestore --> Step5
 ```
 
 ---
