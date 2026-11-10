@@ -110,6 +110,44 @@ Bagian inti yang memproses transaksi saat siswa mendaftar:
 
 Aplikasi client ini dibangun di atas fondasi arsitektur **Serverless** (tanpa perlu mengelola server fisik atau VPS manual):
 
+```mermaid
+flowchart TD
+    User["Browser Siswa / Publik"]
+
+    subgraph ServerlessCompute ["Serverless Compute (Next.js Route Handlers)"]
+        direction TB
+        F_Upload["/api/upload-payment<br/>(Validasi Sesi + Kompresi Bukti)"]
+        F_WA["/api/whatsapp/notify-admin<br/>(Kirim Notifikasi WhatsApp Admin)"]
+        F_Email["/api/*-registration-email<br/>(Kirim Email Tanda Terima SMTP)"]
+        F_Regions["/api/regions<br/>(Proxy & Cache Wilayah Indonesia)"]
+    end
+
+    subgraph ServerlessData ["Serverless Data & Object Storage"]
+        direction TB
+        Firestore[("Google Cloud Firestore<br/>(Database Dokumen NoSQL)")]
+        R2[("Cloudflare R2 Storage<br/>(CDN Global & Zero Egress)")]
+    end
+
+    subgraph ManagedServices ["Layanan Eksternal Terkelola"]
+        direction TB
+        Auth["Firebase Authentication<br/>(Verifikasi Akun & Token)"]
+        TinyPNG["TinyPNG API<br/>(Kompresi Gambar Otomatis)"]
+        Baselab["Baselab WA Gateway<br/>(Gateway Pesan WhatsApp)"]
+        SMTP["Hostinger Mail Server<br/>(Mail Server SMTP)"]
+    end
+
+    User -->|"Aksi Pendaftaran & Upload"| ServerlessCompute
+    User -->|"Ambil Data Kelas & Event"| Firestore
+    User -->|"Autentikasi & Login"| Auth
+
+    F_Upload -->|"Kompresi Gambar"| TinyPNG
+    TinyPNG -->|"Simpan Foto Bukti"| R2
+    F_Upload -->|"Simpan Transaksi"| Firestore
+
+    F_WA -->|"Kirim Pesan"| Baselab
+    F_Email -->|"Kirim Email"| SMTP
+```
+
 1. **Komputasi On-Demand (Stateless Handlers)**:
    - Logika backend pada rute `/app/api/*` (seperti upload bukti bayar, pengiriman email, dan notifikasi WhatsApp) berjalan sebagai fungsi serverless.
    - Fungsi komputasi hanya menyala saat ada panggilan request masuk dari siswa, lalu mati kembali setelah proses selesai (*scale-to-zero*).
